@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Material Design 3 Tokens — Buberta Finance =====
+   Palet dari logo B3: biru #16789E + kuning #F8CA08 */
+:root {
+  --md-primary: #16789e;
+  --md-on-primary: #fff;
+  --md-primary-container: #c2e8fb;
+  --md-on-primary-container: #001f2a;
+  --md-secondary: #4c6270;
+  --md-on-secondary: #fff;
+  --md-secondary-container: #cfe6f3;
+  --md-on-secondary-container: #071e28;
+  /* Tertiary = aksen kuning logo */
+  --md-tertiary: #f8ca08;
+  --md-on-tertiary: #3d2f00;
+  --md-tertiary-container: #ffe082;
+  --md-on-tertiary-container: #251a00;
+  --md-error: #ba1a1a;
+  --md-on-error: #fff;
+  --md-error-container: #ffdad6;
+  --md-on-error-container: #410002;
+  --md-surface: #f6fafd;
+  --md-on-surface: #171c1f;
+  --md-surface-variant: #dbe4e9;
+  --md-on-surface-variant: #3f484d;
+  --md-outline: #6f797f;
+  --md-outline-variant: #bfc8ce;
+  --md-background: #f6fafd;
+  --md-on-background: #171c1f;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f0f4f8;
+  --md-surface-container: #eaeef2;
+  --md-surface-container-high: #e4e9ed;
+  --md-surface-container-highest: #dee3e7;
+  --md-radius-xs: 4px;
+  --md-radius-sm: 8px;
+  --md-radius-md: 12px;
+  --md-radius-lg: 16px;
+  --md-radius-xl: 28px;
+  --md-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  --md-transition: 200ms cubic-bezier(0.2, 0, 0, 1);
+  --sidebar-w: 280px;
+}
+
+body {
+  font-family:
+    "Roboto",
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background: var(--md-background);
+  color: var(--md-on-surface);
+}
+
+/* MD3 Navigation Drawer */
+.nav-drawer {
+  width: var(--sidebar-w);
+  background: var(--md-surface-container-low);
+  border-right: 1px solid var(--md-outline-variant);
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  transition: transform var(--md-transition);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.nav-drawer.closed {
+  transform: translateX(-100%);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  height: 48px;
+  border-radius: var(--md-radius-xl);
+  cursor: pointer;
+  color: var(--md-on-surface-variant);
+  font-weight: 500;
+  transition:
+    background var(--md-transition),
+    color var(--md-transition);
+  margin: 2px 0;
+}
+.nav-item:hover {
+  background: var(--md-surface-container-high);
+}
+.nav-item.active {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+  font-weight: 600;
+}
+
+/* MD3 Summary Cards */
+.summary-card {
+  background: var(--md-surface-container-low);
+  border-radius: var(--md-radius-md);
+  padding: 20px;
+  box-shadow: var(--md-shadow);
+}
+
+/* MD3 Chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.chip-blue {
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+}
+.chip-yellow {
+  background: var(--md-tertiary-container);
+  color: var(--md-on-tertiary-container);
+}
+.chip-red {
+  background: var(--md-error-container);
+  color: var(--md-on-error-container);
+}
