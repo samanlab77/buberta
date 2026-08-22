@@ -13,3 +13,11 @@ binding = "DB"
 database_name = "buberta-finance-db"
 # Isi dari perintah: npx wrangler d1 create buberta-finance-db
 database_id = "e43edfce-b99e-4ff7-81a7-5fd93bcac527"
+
+# --- Autentikasi -----------------------------------------------------
+# Kunci rahasia penanda-tangan token sesi (HMAC-SHA256).
+# PRODUKSI: JANGAN pakai nilai di bawah. Set sebagai secret:
+#   npx wrangler pages secret put AUTH_SECRET
+# Nilai [vars] ini hanya untuk pengembangan lokal (wrangler pages dev).
+[vars]
+AUTH_SECRET = "cP1MEYn06kZG3cILuZyfWzprItUKggui8ZKqDFz9K9phu5hz81Ztcn_W8l7_WpgC"
