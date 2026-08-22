@@ -1,0 +1,17 @@
+{
+  "//": "Type-check khusus Cloudflare Pages Functions (runtime Workers, bukan DOM). Dipisah dari tsconfig root karena `functions/` dikecualikan dari `next build`.",
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["@cloudflare/workers-types"],
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["**/*.ts"]
+}
