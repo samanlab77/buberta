@@ -1,0 +1,15 @@
+# ── Cloudflare Pages + D1 — Buberta Finance ────────────────────────
+# Jalankan SEMUA perintah wrangler dari folder ini: buberta-finance/nextjs/
+name = "buberta-finance"
+compatibility_date = "2024-09-23"
+
+# Folder hasil `next build` (output: "export").
+pages_build_output_dir = "out"
+
+# Binding database D1 → dibaca sebagai `env.DB` di
+# functions/api/[[route]].ts. JANGAN ubah nama "DB".
+[[d1_databases]]
+binding = "DB"
+database_name = "buberta-finance-db"
+# Isi dari perintah: npx wrangler d1 create buberta-finance-db
+database_id = "GANTI_DENGAN_DATABASE_ID"

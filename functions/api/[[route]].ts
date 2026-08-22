@@ -1,3 +1,5 @@
+/// <reference types="@cloudflare/workers-types" />
+
 /**
  * Buberta Finance — Pages Functions API
  * Runtime: Cloudflare Workers (via Pages Functions)
