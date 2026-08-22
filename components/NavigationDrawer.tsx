@@ -11,44 +11,73 @@ import {
   Settings,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
+import { type SesiUser } from "@/lib/api";
 
-const menuItems = [
+type Peran = SesiUser["role"];
+
+const menuItems: {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  section: string;
+  roles: Peran[];
+}[] = [
   {
     label: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
     section: "dashboard",
+    roles: ["admin", "manager", "kasir"],
   },
   {
     label: "Master Data",
     href: "/master/nasabah",
     icon: FolderOpen,
     section: "master",
+    roles: ["admin", "manager", "kasir"],
   },
   {
     label: "Transaksi Kredit",
     href: "/transaksi/akad",
     icon: Banknote,
     section: "transaksi",
+    roles: ["admin", "manager", "kasir"],
   },
   {
     label: "Laporan",
     href: "/laporan/lpp",
     icon: BarChart3,
     section: "laporan",
+    roles: ["admin", "manager", "kasir"],
   },
   {
     label: "Pengaturan",
     href: "/pengaturan/pengguna",
     icon: Settings,
     section: "pengaturan",
+    roles: ["admin", "manager"],
   },
 ];
 
-export default function NavigationDrawer() {
+const labelPeran: Record<Peran, string> = {
+  admin: "Administrator",
+  manager: "Manager",
+  kasir: "Kasir",
+};
+
+export default function NavigationDrawer({
+  user,
+  onKeluar,
+}: {
+  user: SesiUser;
+  onKeluar: () => void;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const inisial = (user.nama || "?").charAt(0).toUpperCase();
+  const menu = menuItems.filter((item) => item.roles.includes(user.role));
 
   return (
     <>
@@ -81,7 +110,7 @@ export default function NavigationDrawer() {
           </button>
         </div>
         <nav className="flex-1 p-3">
-          {menuItems.map((item) => {
+          {menu.map((item) => {
             const active = pathname.startsWith("/" + item.section);
             const Icon = item.icon;
             return (
@@ -100,16 +129,24 @@ export default function NavigationDrawer() {
         <div className="p-3 border-t border-outline-variant">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-semibold text-sm">
-              M
+              {inisial}
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-surface-on truncate">
-                Manager
+                {user.nama}
               </div>
               <div className="text-xs text-surface-on-variant">
-                Buberta Finance
+                {labelPeran[user.role] ?? user.role}
               </div>
             </div>
+            <button
+              onClick={onKeluar}
+              title="Keluar"
+              aria-label="Keluar"
+              className="p-2 rounded-full hover:bg-surface-container-high text-surface-on-variant"
+            >
+              <LogOut size={20} />
+            </button>
           </div>
         </div>
       </aside>

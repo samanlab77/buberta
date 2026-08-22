@@ -8,11 +8,181 @@
 
 interface Env {
   DB: D1Database;
+  AUTH_SECRET?: string;
+}
+
+// ===================== AUTENTIKASI (sesi berbasis cookie) =====================
+// Implementasi ringkas tanpa pustaka Node: verifikasi kata sandi PBKDF2 dan
+// token sesi bertanda-tangan HMAC, keduanya via Web Crypto (crypto.subtle)
+// yang tersedia di runtime Cloudflare Workers/Pages Functions.
+const enc = new TextEncoder();
+const NAMA_COOKIE = "bf_sesi";
+const MASA_SESI_DETIK = 60 * 60 * 8; // 8 jam
+
+interface SesiPayload {
+  sub: string;
+  email: string;
+  nama: string;
+  role: string;
+  exp: number;
+}
+
+function hexKeBytes(hex: string): Uint8Array {
+  const b = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < b.length; i++)
+    b[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  return b;
+}
+function bufferKeHex(buf: ArrayBuffer): string {
+  return [...new Uint8Array(buf)]
+    .map((x) => x.toString(16).padStart(2, "0"))
+    .join("");
+}
+function bytesKeB64url(bytes: Uint8Array): string {
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlKeBytes(s: string): Uint8Array {
+  s = s.replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  const bin = atob(s);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+function strKeB64url(str: string): string {
+  return bytesKeB64url(enc.encode(str));
+}
+function b64urlKeStr(s: string): string {
+  return new TextDecoder().decode(b64urlKeBytes(s));
+}
+
+async function verifikasiPassword(
+  password: string,
+  tersimpan: string,
+): Promise<boolean> {
+  // Format tersimpan: pbkdf2$<iterasi>$<saltHex>$<hashHex>
+  const bagian = tersimpan.split("$");
+  if (bagian.length !== 4 || bagian[0] !== "pbkdf2") return false;
+  const iterasi = parseInt(bagian[1], 10);
+  const salt = hexKeBytes(bagian[2]);
+  const diharapkan = bagian[3];
+  const kunci = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: iterasi, hash: "SHA-256" },
+    kunci,
+    256,
+  );
+  const aktual = bufferKeHex(bits);
+  if (aktual.length !== diharapkan.length) return false;
+  let beda = 0;
+  for (let i = 0; i < aktual.length; i++)
+    beda |= aktual.charCodeAt(i) ^ diharapkan.charCodeAt(i);
+  return beda === 0;
+}
+
+async function hmac(secret: string, data: string): Promise<string> {
+  const kunci = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", kunci, enc.encode(data));
+  return bytesKeB64url(new Uint8Array(sig));
+}
+
+function rahasia(env: Env): string {
+  return env.AUTH_SECRET || "dev-secret-ganti-di-produksi";
+}
+
+async function buatToken(
+  payload: SesiPayload,
+  secret: string,
+): Promise<string> {
+  const body = strKeB64url(JSON.stringify(payload));
+  return body + "." + (await hmac(secret, body));
+}
+async function verifikasiToken(
+  token: string,
+  secret: string,
+): Promise<SesiPayload | null> {
+  const titik = token.indexOf(".");
+  if (titik < 0) return null;
+  const body = token.slice(0, titik);
+  const sig = token.slice(titik + 1);
+  if (sig !== (await hmac(secret, body))) return null;
+  try {
+    const payload = JSON.parse(b64urlKeStr(body)) as SesiPayload;
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000))
+      return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function bacaCookie(request: Request, nama: string): string | null {
+  const header = request.headers.get("Cookie") || "";
+  for (const bagian of header.split(";")) {
+    const idx = bagian.indexOf("=");
+    if (idx < 0) continue;
+    if (bagian.slice(0, idx).trim() === nama)
+      return decodeURIComponent(bagian.slice(idx + 1).trim());
+  }
+  return null;
+}
+function serialisasiCookie(
+  request: Request,
+  token: string,
+  maxAge: number,
+): string {
+  const https = new URL(request.url).protocol === "https:";
+  return `${NAMA_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; ${
+    https ? "Secure; " : ""
+  }SameSite=Lax; Max-Age=${maxAge}`;
+}
+
+async function bacaSesi(
+  request: Request,
+  env: Env,
+): Promise<SesiPayload | null> {
+  const token = bacaCookie(request, NAMA_COOKIE);
+  if (!token) return null;
+  return verifikasiToken(token, rahasia(env));
+}
+
+function galatJson(status: number, pesan: string): Response {
+  return new Response(JSON.stringify({ error: pesan }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const { env, params } = context;
   const path = (params.route as string[]).join("/");
+
+  // Sesi pengguna saat ini (dibaca dari cookie tanda-tangan).
+  if (path === "auth/me") {
+    const sesi = await bacaSesi(context.request, env);
+    if (!sesi) return galatJson(401, "Belum masuk");
+    return Response.json({
+      user: { id: sesi.sub, email: sesi.email, nama: sesi.nama, role: sesi.role },
+    });
+  }
+
+  // Semua rute data GET wajib memiliki sesi yang sah.
+  const sesi = await bacaSesi(context.request, env);
+  if (!sesi) return galatJson(401, "Belum masuk");
 
   if (path === "kesehatan") {
     const [n, p, k] = await Promise.all([
@@ -193,6 +363,62 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { env, params } = context;
   const path = (params.route as string[]).join("/");
+
+  // ---- Masuk & keluar (tidak memerlukan sesi sebelumnya) ----
+  if (path === "auth/login") {
+    const kredensial = (await context.request.json().catch(() => ({}))) as any;
+    const email = String(kredensial?.email || "").trim().toLowerCase();
+    const password = String(kredensial?.password || "");
+    if (!email || !password)
+      return galatJson(400, "Email dan kata sandi wajib diisi");
+    const user = (await env.DB.prepare(
+      "SELECT id, email, password_hash, nama, role, status FROM users WHERE email = ?",
+    )
+      .bind(email)
+      .first()) as any;
+    if (!user || user.status !== "aktif")
+      return galatJson(401, "Email atau kata sandi salah");
+    const cocok = await verifikasiPassword(password, user.password_hash);
+    if (!cocok) return galatJson(401, "Email atau kata sandi salah");
+    const payload: SesiPayload = {
+      sub: user.id,
+      email: user.email,
+      nama: user.nama,
+      role: user.role,
+      exp: Math.floor(Date.now() / 1000) + MASA_SESI_DETIK,
+    };
+    const token = await buatToken(payload, rahasia(env));
+    return new Response(
+      JSON.stringify({
+        user: {
+          id: user.id,
+          email: user.email,
+          nama: user.nama,
+          role: user.role,
+        },
+      }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Set-Cookie": serialisasiCookie(context.request, token, MASA_SESI_DETIK),
+        },
+      },
+    );
+  }
+
+  if (path === "auth/logout") {
+    return new Response(JSON.stringify({ ok: true }), {
+      headers: {
+        "Content-Type": "application/json",
+        "Set-Cookie": serialisasiCookie(context.request, "", 0),
+      },
+    });
+  }
+
+  // ---- Semua rute POST lain wajib memiliki sesi yang sah ----
+  const sesi = await bacaSesi(context.request, env);
+  if (!sesi) return galatJson(401, "Belum masuk");
+
   const body = (await context.request.json()) as any;
 
   if (path === "nasabah") {
@@ -303,7 +529,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         pokokBayar,
         jasaBayar,
         body.bulanBerjalan,
-        "user-kasir",
+        sesi.sub,
       )
       .run();
 
@@ -350,7 +576,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         sisaPokok,
         jasaPelunasan,
         totalPelunasan,
-        "user-kasir",
+        sesi.sub,
       )
       .run();
     await env.DB.prepare(

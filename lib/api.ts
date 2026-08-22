@@ -7,6 +7,7 @@ const API_BASE = "/api";
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
+    credentials: "include",
     ...options,
     headers: { "Content-Type": "application/json", ...options?.headers },
   });
@@ -15,6 +16,15 @@ async function api<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const apiClient = {
+  // Autentikasi
+  login: (email: string, password: string) =>
+    api<{ user: SesiUser }>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+  me: () => api<{ user: SesiUser }>("/auth/me"),
+  logout: () => api<{ ok: boolean }>("/auth/logout", { method: "POST" }),
+
   // Master
   getNasabah: () => api<Nasabah[]>("/nasabah"),
   createNasabah: (data: {
@@ -69,6 +79,12 @@ export const apiClient = {
 };
 
 // ===== Types =====
+export interface SesiUser {
+  id: string;
+  email: string;
+  nama: string;
+  role: "admin" | "kasir" | "manager";
+}
 export interface Nasabah {
   id: string;
   no_nasabah: string;
