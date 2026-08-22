@@ -6,10 +6,19 @@ import { Loader2 } from "lucide-react";
 import NavigationDrawer from "@/components/NavigationDrawer";
 import StatusKoneksi from "@/components/StatusKoneksi";
 import { apiClient, type SesiUser } from "@/lib/api";
+import { SesiProvider } from "@/hooks/useSesi";
 
 // Kebijakan akses per-peran: prefix path -> peran yang diizinkan.
 const kebijakanPeran: { prefix: string; peran: SesiUser["role"][] }[] = [
   { prefix: "/pengaturan", peran: ["admin", "manager"] },
+];
+
+const judulHalaman: { prefix: string; judul: string }[] = [
+  { prefix: "/dashboard", judul: "Dashboard" },
+  { prefix: "/master", judul: "Master Data" },
+  { prefix: "/transaksi", judul: "Transaksi Kredit" },
+  { prefix: "/laporan", judul: "Laporan" },
+  { prefix: "/pengaturan", judul: "Pengaturan" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -63,12 +72,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <SesiProvider value={user}>
+      <div className="flex min-h-screen">
       <NavigationDrawer user={user} onKeluar={keluar} />
       <main className="flex-1 lg:ml-[280px] flex flex-col min-h-screen">
         <header className="sticky top-0 z-30 bg-surface border-b border-outline-variant px-5 h-16 flex items-center gap-3">
           <h1 className="text-xl font-semibold text-surface-on flex-1">
-            Buberta Finance
+            {judulHalaman.find((j) => pathname.startsWith(j.prefix))?.judul ??
+              "Buberta Finance"}
           </h1>
           <StatusKoneksi />
         </header>
@@ -76,6 +87,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </main>
-    </div>
+      </div>
+    </SesiProvider>
   );
 }

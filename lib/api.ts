@@ -36,6 +36,12 @@ export const apiClient = {
   }) =>
     api<Nasabah>("/nasabah", { method: "POST", body: JSON.stringify(data) }),
   getProduk: () => api<Produk[]>("/produk"),
+  createProduk: (data: {
+    nama: string;
+    kategori: string;
+    harga_jual: number;
+    stok: number;
+  }) => api<Produk>("/produk", { method: "POST", body: JSON.stringify(data) }),
   getTenorJasa: () => api<TenorJasa[]>("/tenor-jasa"),
 
   // Kontrak & transaksi

@@ -421,6 +421,34 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const body = (await context.request.json()) as any;
 
+  if (path === "produk") {
+    if (sesi.role !== "admin")
+      return galatJson(403, "Hanya admin yang boleh menambah produk");
+    const nama = String(body?.nama || "").trim();
+    const kategori = String(body?.kategori || "").trim();
+    const hargaJual = Math.round(Number(body?.harga_jual));
+    const stok = Math.round(Number(body?.stok ?? 0));
+    if (!nama) return galatJson(400, "Nama produk wajib diisi");
+    if (!Number.isFinite(hargaJual) || hargaJual < 0)
+      return galatJson(400, "Harga jual tidak valid");
+    if (!Number.isFinite(stok) || stok < 0)
+      return galatJson(400, "Stok tidak valid");
+    const id = crypto.randomUUID();
+    await env.DB.prepare(
+      "INSERT INTO produk (id, nama, harga_jual, stok, kategori) VALUES (?,?,?,?,?)",
+    )
+      .bind(id, nama, hargaJual, stok, kategori || null)
+      .run();
+    return Response.json({
+      id,
+      nama,
+      harga_jual: hargaJual,
+      stok,
+      kategori,
+      status: "aktif",
+    });
+  }
+
   if (path === "nasabah") {
     const id = crypto.randomUUID();
     const no = String(Date.now()).slice(-4);
