@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Clock, Plus } from "lucide-react";
 import { rupiah, persen } from "@/lib/utils";
 import { apiClient, type TenorJasa } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
@@ -15,8 +16,8 @@ export default function TenorJasaPage() {
   const pokok = parseFloat(contohPokok) || 0;
 
   return (
-    <div className="space-y-6">
-      <div className="bg-surface-container-low rounded-xl p-5 shadow-md1">
+    <div className="space-y-6 animate-fade-in">
+      <div className="summary-card">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <label className="text-sm font-medium text-surface-on-variant">
             Simulasi pokok pinjaman:
@@ -25,7 +26,7 @@ export default function TenorJasaPage() {
             type="number"
             value={contohPokok}
             onChange={(e) => setContohPokok(e.target.value)}
-            className="px-4 py-2 rounded-lg border border-outline-variant bg-surface text-surface-on w-full sm:w-56"
+            className="input-md3 w-full sm:w-56"
           />
           <span className="text-sm text-surface-on-variant">
             Jasa flat = pokok × persen × tenor
@@ -49,9 +50,9 @@ export default function TenorJasaPage() {
               return (
                 <div
                   key={t.id}
-                  className="bg-surface-container-low rounded-xl p-5 shadow-md1 text-center"
+                  className="summary-card text-center group hover:border-primary transition-all"
                 >
-                  <div className="w-12 h-12 mx-auto rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-lg mb-2">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-lg mb-3 group-hover:scale-110 transition-transform">
                     {t.tenor_bulan}
                   </div>
                   <div className="text-sm font-semibold text-surface-on">
@@ -71,59 +72,60 @@ export default function TenorJasaPage() {
             })}
           </div>
 
-          <div className="bg-surface-container-low rounded-xl shadow-md1 overflow-hidden">
-            <div className="p-5 flex items-center justify-between">
+          <div className="summary-card overflow-hidden !p-0">
+            <div className="p-6 flex items-center justify-between border-b border-outline-variant">
               <div>
-                <h2 className="text-lg font-semibold text-surface-on">
+                <h2 className="text-lg font-bold text-surface-on flex items-center gap-2">
+                  <Clock size={18} className="text-primary" />
                   Master Tenor & Jasa
                 </h2>
                 <p className="text-sm text-surface-on-variant">
                   {tenor.length} pilihan tenor aktif
                 </p>
               </div>
-              <button className="px-4 py-2 rounded-lg bg-primary text-on-primary font-medium text-sm hover:opacity-90">
-                + Tambah Tenor
+              <button className="btn-primary px-5 py-2.5 text-sm flex items-center gap-2">
+                <Plus size={16} />
+                Tambah Tenor
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="data-table">
                 <thead>
-                  <tr className="border-b border-outline-variant text-surface-on-variant">
-                    <th className="text-left py-3 px-4">Tenor (bulan)</th>
-                    <th className="text-right py-3 px-4">Jasa per Bulan</th>
-                    <th className="text-right py-3 px-4">
+                  <tr>
+                    <th className="text-left">Tenor (bulan)</th>
+                    <th className="text-right">Jasa per Bulan</th>
+                    <th className="text-right hidden sm:table-cell">
                       Jasa Total (simulasi)
                     </th>
-                    <th className="text-left py-3 px-4">Status</th>
-                    <th className="text-right py-3 px-4">Aksi</th>
+                    <th className="text-left">Status</th>
+                    <th className="text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {tenor.map((t) => (
-                    <tr
-                      key={t.id}
-                      className="border-b border-outline-variant/50 hover:bg-surface-container"
-                    >
-                      <td className="py-3 px-4 font-medium">
+                    <tr key={t.id}>
+                      <td className="font-semibold">
                         {t.tenor_bulan} bulan
                       </td>
-                      <td className="text-right py-3 px-4">
+                      <td className="text-right">
                         {persen(t.persentase_jasa)}
                       </td>
-                      <td className="text-right py-3 px-4">
+                      <td className="text-right hidden sm:table-cell">
                         {rupiah(
                           Math.round(pokok * t.persentase_jasa * t.tenor_bulan),
                         )}
                       </td>
-                      <td className="py-3 px-4">
+                      <td>
                         <span
-                          className={`px-3 py-1 rounded text-xs font-medium ${t.status_aktif === 1 ? "bg-primary-container text-on-primary-container" : "bg-surface-variant text-surface-on-variant"}`}
+                          className={`chip ${
+                            t.status_aktif === 1 ? "chip-blue" : "bg-surface-container text-surface-on-variant"
+                          }`}
                         >
                           {t.status_aktif === 1 ? "Aktif" : "Nonaktif"}
                         </span>
                       </td>
-                      <td className="text-right py-3 px-4">
-                        <button className="text-primary font-medium hover:underline">
+                      <td className="text-right">
+                        <button className="text-primary font-medium text-sm hover:underline transition-colors">
                           Edit
                         </button>
                       </td>

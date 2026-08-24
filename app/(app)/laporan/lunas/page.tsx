@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckCircle2, FileCheck, Zap } from "lucide-react";
 import { rupiah, rupiahRingkas, tanggal } from "@/lib/utils";
 import { apiClient, type LunasRow } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
@@ -14,37 +15,54 @@ export default function LunasPage() {
   const dipercepat = rows.filter((l) => l.status === "dipercepat").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-surface-container-low rounded-xl p-5 shadow-md1">
-          <div className="text-sm text-surface-on-variant font-medium">
-            Total Kontrak Lunas
-          </div>
-          <div className="text-2xl font-bold text-surface-on mt-1">
-            {loading ? "…" : `${rows.length} kontrak`}
-          </div>
-        </div>
-        <div className="bg-surface-container-low rounded-xl p-5 shadow-md1">
-          <div className="text-sm text-surface-on-variant font-medium">
-            Total Pokok Lunas
-          </div>
-          <div className="text-2xl font-bold text-primary mt-1">
-            {loading ? "…" : rupiahRingkas(totalPokok)}
-          </div>
-        </div>
-        <div className="bg-surface-container-low rounded-xl p-5 shadow-md1">
-          <div className="text-sm text-surface-on-variant font-medium">
-            Pelunasan Dipercepat
-          </div>
-          <div className="text-2xl font-bold text-surface-on mt-1">
-            {loading ? "…" : `${dipercepat} kontrak`}
-          </div>
-        </div>
+        {[
+          {
+            label: "Total Kontrak Lunas",
+            value: loading ? "…" : `${rows.length} kontrak`,
+            icon: CheckCircle2,
+            color: "text-primary",
+            bg: "bg-primary-container",
+          },
+          {
+            label: "Total Pokok Lunas",
+            value: loading ? "…" : rupiahRingkas(totalPokok),
+            icon: FileCheck,
+            color: "text-primary",
+            bg: "bg-primary-container",
+          },
+          {
+            label: "Pelunasan Dipercepat",
+            value: loading ? "…" : `${dipercepat} kontrak`,
+            icon: Zap,
+            color: "text-on-tertiary-container",
+            bg: "bg-tertiary-container",
+          },
+        ].map((card) => {
+          const Icon = card.icon;
+          return (
+            <div key={card.label} className="summary-card">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-8 h-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                  <Icon size={16} className={card.color} />
+                </div>
+                <span className="text-sm text-surface-on-variant font-medium">
+                  {card.label}
+                </span>
+              </div>
+              <div className="text-xl font-bold text-surface-on">
+                {card.value}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="bg-surface-container-low rounded-xl shadow-md1 overflow-hidden">
-        <div className="p-5">
-          <h2 className="text-lg font-semibold text-surface-on">
+      <div className="summary-card overflow-hidden !p-0">
+        <div className="p-6 border-b border-outline-variant">
+          <h2 className="text-lg font-bold text-surface-on flex items-center gap-2">
+            <FileCheck size={18} className="text-primary" />
             Laporan Kredit Lunas
           </h2>
         </div>
@@ -56,15 +74,15 @@ export default function LunasPage() {
           <Kosong pesan="Belum ada kontrak lunas." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-outline-variant text-surface-on-variant">
-                  <th className="text-left py-3 px-4">No. Kontrak</th>
-                  <th className="text-left py-3 px-4">Nasabah</th>
-                  <th className="text-left py-3 px-4">Tgl Akad</th>
-                  <th className="text-left py-3 px-4">Tgl Lunas</th>
-                  <th className="text-right py-3 px-4">Pokok</th>
-                  <th className="text-left py-3 px-4">Jenis</th>
+                <tr>
+                  <th className="text-left">No. Kontrak</th>
+                  <th className="text-left">Nasabah</th>
+                  <th className="text-left hidden md:table-cell">Tgl Akad</th>
+                  <th className="text-left hidden md:table-cell">Tgl Lunas</th>
+                  <th className="text-right">Pokok</th>
+                  <th className="text-left">Jenis</th>
                 </tr>
               </thead>
               <tbody>
@@ -72,22 +90,20 @@ export default function LunasPage() {
                   const jenis =
                     l.status === "dipercepat" ? "Dipercepat" : "Normal";
                   return (
-                    <tr
-                      key={l.no_kontrak}
-                      className="border-b border-outline-variant/50 hover:bg-surface-container"
-                    >
-                      <td className="py-3 px-4 font-medium">{l.no_kontrak}</td>
-                      <td className="py-3 px-4">
-                        {l.nama} ({l.no_nasabah})
+                    <tr key={l.no_kontrak}>
+                      <td className="font-semibold">{l.no_kontrak}</td>
+                      <td>
+                        <div className="font-medium">{l.nama}</div>
+                        <div className="text-xs text-surface-on-variant">{l.no_nasabah}</div>
                       </td>
-                      <td className="py-3 px-4">{tanggal(l.tanggal_akad)}</td>
-                      <td className="py-3 px-4">{tanggal(l.tanggal_lunas)}</td>
-                      <td className="text-right py-3 px-4">
-                        {rupiah(l.pokok_pinjaman)}
-                      </td>
-                      <td className="py-3 px-4">
+                      <td className="hidden md:table-cell">{tanggal(l.tanggal_akad)}</td>
+                      <td className="hidden md:table-cell">{tanggal(l.tanggal_lunas)}</td>
+                      <td className="text-right">{rupiah(l.pokok_pinjaman)}</td>
+                      <td>
                         <span
-                          className={`px-3 py-1 rounded text-xs font-medium ${jenis === "Dipercepat" ? "bg-tertiary-container text-on-tertiary-container" : "bg-primary-container text-on-primary-container"}`}
+                          className={`chip ${
+                            jenis === "Dipercepat" ? "chip-yellow" : "chip-green"
+                          }`}
                         >
                           {jenis}
                         </span>
@@ -97,12 +113,10 @@ export default function LunasPage() {
                 })}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-outline bg-surface-container font-bold">
-                  <td className="py-3 px-4" colSpan={4}>
-                    TOTAL
-                  </td>
-                  <td className="text-right py-3 px-4">{rupiah(totalPokok)}</td>
-                  <td className="py-3 px-4"></td>
+                <tr className="bg-surface-container font-bold border-t-2 border-outline">
+                  <td className="py-4 px-4" colSpan={4}>TOTAL</td>
+                  <td className="text-right py-4 px-4">{rupiah(totalPokok)}</td>
+                  <td className="py-4 px-4"></td>
                 </tr>
               </tfoot>
             </table>

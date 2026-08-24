@@ -14,8 +14,8 @@ const tabs = [
 export default function LaporanLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap gap-1 p-1 rounded-xl bg-surface-container-low w-fit">
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-wrap gap-1 p-1 rounded-xl bg-surface-container w-fit">
         {tabs.map((t) => {
           const aktif =
             pathname === t.href || pathname.startsWith(t.href + "/");
@@ -25,8 +25,8 @@ export default function LaporanLayout({ children }: { children: ReactNode }) {
               href={t.href}
               className={
                 aktif
-                  ? "px-4 py-2 rounded-lg text-sm font-medium bg-primary text-on-primary shadow-md1"
-                  : "px-4 py-2 rounded-lg text-sm font-medium text-surface-on-variant hover:bg-surface-container-high"
+                  ? "px-5 py-2.5 rounded-lg text-sm font-semibold bg-primary text-on-primary shadow-md1 transition-all"
+                  : "px-5 py-2.5 rounded-lg text-sm font-medium text-surface-on-variant hover:bg-surface-container-high hover:text-surface-on transition-all"
               }
             >
               {t.label}

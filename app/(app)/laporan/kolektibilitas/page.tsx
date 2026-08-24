@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertCircle } from "lucide-react";
 import { angka, rupiah } from "@/lib/utils";
 import { apiClient, type KolekSummary, type KolekDetail } from "@/lib/api";
 import { KOLEK_COLOR, KOLEK_LABEL, type StatusKolek } from "@/lib/kredit";
@@ -35,42 +36,57 @@ export default function KolektibilitasPage() {
   const baris = detail.data ?? [];
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div className="space-y-6 animate-fade-in">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {kartu.map((k) => (
           <div
             key={k.kode}
-            className="bg-surface-container-low rounded-xl p-5 shadow-md1"
+            className="summary-card group hover:scale-[1.02] transition-transform"
           >
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-3 mb-3">
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm text-white"
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white shadow-sm"
                 style={{ background: k.color }}
               >
                 {k.kode}
               </div>
               <div>
-                <div className="text-sm font-semibold text-surface-on">
+                <div className="text-sm font-bold text-surface-on leading-tight">
                   {k.label}
                 </div>
-                <div className="text-xs text-surface-on-variant">
+                <div className="text-[11px] text-surface-on-variant">
                   {k.rentang}
                 </div>
               </div>
             </div>
             <div className="text-2xl font-bold text-surface-on">
-              {ringkasan.loading ? "…" : angka(k.jumlah)}
+              {ringkasan.loading ? (
+                <span className="skeleton skeleton-title inline-block w-12" />
+              ) : (
+                angka(k.jumlah)
+              )}
             </div>
-            <div className="text-sm text-surface-on-variant">
+            <div className="text-xs text-surface-on-variant mt-1">
               {((k.jumlah / total) * 100).toFixed(1)}% dari total
+            </div>
+            {/* Progress bar */}
+            <div className="mt-2 h-1.5 rounded-full bg-surface-container overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${(k.jumlah / total) * 100}%`,
+                  background: k.color,
+                }}
+              />
             </div>
           </div>
         ))}
       </div>
 
-      <div className="bg-surface-container-low rounded-xl shadow-md1 overflow-hidden">
-        <div className="p-5">
-          <h2 className="text-lg font-semibold text-surface-on">
+      <div className="summary-card overflow-hidden !p-0">
+        <div className="p-6 border-b border-outline-variant flex items-center gap-2">
+          <AlertCircle size={18} className="text-primary" />
+          <h2 className="text-lg font-bold text-surface-on">
             Detail Kolektibilitas per Nasabah
           </h2>
         </div>
@@ -82,35 +98,36 @@ export default function KolektibilitasPage() {
           <Kosong pesan="Semua kredit lancar (Kol I)." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-outline-variant text-surface-on-variant">
-                  <th className="text-left py-3 px-4">No</th>
-                  <th className="text-left py-3 px-4">Nama</th>
-                  <th className="text-left py-3 px-4">Status</th>
-                  <th className="text-right py-3 px-4">Saldo</th>
-                  <th className="text-right py-3 px-4">Tunggakan</th>
+                <tr>
+                  <th className="text-left">No</th>
+                  <th className="text-left">Nama</th>
+                  <th className="text-left">Status</th>
+                  <th className="text-right">Saldo</th>
+                  <th className="text-right">Tunggakan</th>
                 </tr>
               </thead>
               <tbody>
                 {baris.map((b, i) => (
-                  <tr key={i} className="border-b border-outline-variant/50">
-                    <td className="py-3 px-4">{b.no_nasabah}</td>
-                    <td className="py-3 px-4 font-medium">{b.nama}</td>
-                    <td className="py-3 px-4">
+                  <tr key={i}>
+                    <td className="font-mono text-xs text-surface-on-variant">
+                      {b.no_nasabah}
+                    </td>
+                    <td className="font-semibold">{b.nama}</td>
+                    <td>
                       <span
-                        className="px-3 py-1 rounded text-xs font-medium text-white"
+                        className="px-3 py-1 rounded-lg text-xs font-bold text-white"
                         style={{
                           background:
-                            KOLEK_COLOR[b.status_kolek as StatusKolek] ??
-                            "#6F797F",
+                            KOLEK_COLOR[b.status_kolek as StatusKolek] ?? "#6F797F",
                         }}
                       >
                         Kol {b.status_kolek}
                       </span>
                     </td>
-                    <td className="text-right py-3 px-4">{rupiah(b.saldo)}</td>
-                    <td className="text-right py-3 px-4">
+                    <td className="text-right">{rupiah(b.saldo)}</td>
+                    <td className="text-right font-medium text-error">
                       {b.hari_tunggakan} hari
                     </td>
                   </tr>

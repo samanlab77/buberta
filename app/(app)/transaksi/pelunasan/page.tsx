@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import { rupiah } from "@/lib/utils";
 import { simpanTransaksi } from "@/lib/sync";
 import { hitungPelunasan } from "@/lib/kredit";
@@ -31,18 +32,10 @@ export default function PelunasanPage() {
     setHasil(null);
     apiClient
       .getKontrak(noKontrak)
-      .then((d) => {
-        if (!batal) setDetail(d);
-      })
-      .catch(() => {
-        if (!batal) setDetail(null);
-      })
-      .finally(() => {
-        if (!batal) setMemuatDetail(false);
-      });
-    return () => {
-      batal = true;
-    };
+      .then((d) => { if (!batal) setDetail(d); })
+      .catch(() => { if (!batal) setDetail(null); })
+      .finally(() => { if (!batal) setMemuatDetail(false); });
+    return () => { batal = true; };
   }, [noKontrak]);
 
   const sisaBulan = detail ? detail.tenor - detail.angsuran_terbayar : 0;
@@ -68,24 +61,27 @@ export default function PelunasanPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="bg-surface-container-low rounded-xl p-6 shadow-md1">
-        <h2 className="text-lg font-semibold text-surface-on mb-4">
-          Pelunasan Dipercepat
-        </h2>
-        <div>
-          <label className="text-sm font-medium text-surface-on-variant block mb-1">
+    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+      <div className="summary-card">
+        <div className="flex items-center gap-2 mb-5">
+          <FileText size={18} className="text-primary" />
+          <h2 className="text-lg font-bold text-surface-on">
+            Pelunasan Dipercepat
+          </h2>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-surface-on">
             No. Kontrak
           </label>
           <select
             value={noKontrak}
             onChange={(e) => setNoKontrak(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+            className="input-md3"
           >
             <option value="">
               {kontrakQ.loading
                 ? "Memuat kontrak…"
-                : "-- Pilih Kontrak Aktif --"}
+                : "— Pilih Kontrak Aktif —"}
             </option>
             {daftar.map((k) => (
               <option key={k.id} value={k.no_kontrak}>
@@ -100,58 +96,47 @@ export default function PelunasanPage() {
       {memuatDetail && <Memuat pesan="Memuat kontrak…" />}
 
       {detail && p && (
-        <div className="bg-surface-container-low rounded-xl p-6 shadow-md1">
-          <h2 className="text-lg font-semibold text-surface-on mb-4">
+        <div className="summary-card">
+          <h2 className="text-lg font-bold text-surface-on mb-4">
             Rincian Pelunasan
           </h2>
           <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-surface-on-variant">Nasabah</span>
-              <span className="font-medium">
-                {detail.nasabah_nama ?? "-"}
-                {detail.no_nasabah ? ` (${detail.no_nasabah})` : ""}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-surface-on-variant">No. Kontrak</span>
-              <span className="font-medium">{detail.no_kontrak}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-surface-on-variant">
-                Sisa Pokok Pinjaman
-              </span>
-              <span className="font-medium">{rupiah(p.sisaPokok)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-surface-on-variant">Sisa Tenor</span>
-              <span className="font-medium">{sisaBulan} bulan</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-surface-on-variant">
-                Jasa Pelunasan (
-                {(detail.persentase_jasa * 100).toFixed(1).replace(".", ",")}% ×{" "}
-                {sisaBulan} bln)
-              </span>
-              <span className="font-medium">{rupiah(p.jasaPelunasan)}</span>
-            </div>
+            {[
+              { label: "Nasabah", value: `${detail.nasabah_nama ?? "-"}${detail.no_nasabah ? ` (${detail.no_nasabah})` : ""}` },
+              { label: "No. Kontrak", value: detail.no_kontrak },
+              { label: "Sisa Pokok Pinjaman", value: rupiah(p.sisaPokok) },
+              { label: "Sisa Tenor", value: `${sisaBulan} bulan` },
+              {
+                label: `Jasa Pelunasan (${(detail.persentase_jasa * 100).toFixed(1).replace(".", ",")}% × ${sisaBulan} bln)`,
+                value: rupiah(p.jasaPelunasan),
+              },
+            ].map((row) => (
+              <div key={row.label} className="flex justify-between text-sm">
+                <span className="text-surface-on-variant">{row.label}</span>
+                <span className="font-medium">{row.value}</span>
+              </div>
+            ))}
             <div className="flex justify-between border-t-2 border-outline pt-3 text-lg">
-              <span className="font-semibold">Total Pelunasan</span>
+              <span className="font-semibold text-surface-on">Total Pelunasan</span>
               <span className="font-bold text-primary">
                 {rupiah(p.totalPelunasan)}
               </span>
             </div>
           </div>
-          <div className="mt-6 p-4 bg-error-container rounded-lg">
+
+          <div className="mt-5 p-4 bg-error-container rounded-xl flex items-start gap-3 animate-fade-in">
+            <AlertTriangle size={18} className="text-error shrink-0 mt-0.5" />
             <div className="text-sm text-on-error-container">
-              ⚠️ Pelunasan dipercepat akan menutup kontrak. Sisa jasa dihitung
+              Pelunasan dipercepat akan menutup kontrak. Sisa jasa dihitung
               prorata berdasarkan sisa bulan. Tindakan ini tidak dapat
               dibatalkan.
             </div>
           </div>
+
           <button
             onClick={() => void konfirmasi()}
             disabled={menyimpan}
-            className="w-full mt-4 py-3 rounded-lg bg-primary text-on-primary font-semibold hover:opacity-90 disabled:opacity-60"
+            className="btn-primary w-full mt-5 py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {menyimpan ? "Menyimpan…" : "Konfirmasi Pelunasan"}
           </button>
@@ -160,20 +145,24 @@ export default function PelunasanPage() {
 
       {hasil && (
         <div
-          className={`rounded-xl p-6 shadow-md1 text-center ${hasil.mode === "online" ? "bg-primary-container" : "bg-tertiary-container"}`}
+          className={`rounded-2xl p-8 shadow-md1 text-center animate-fade-in-scale ${
+            hasil.mode === "online" ? "bg-success-container" : "bg-tertiary-container"
+          }`}
         >
-          <div className="text-4xl mb-2">
-            {hasil.mode === "online" ? "✅" : "📥"}
+          <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center bg-white/50">
+            <CheckCircle2 size={32} className={hasil.mode === "online" ? "text-success" : "text-on-tertiary-container"} />
           </div>
           <h3
-            className={`text-lg font-semibold mb-1 ${hasil.mode === "online" ? "text-on-primary-container" : "text-on-tertiary-container"}`}
+            className={`text-lg font-bold mb-2 ${
+              hasil.mode === "online" ? "text-on-success-container" : "text-on-tertiary-container"
+            }`}
           >
-            {hasil.mode === "online"
-              ? "Pelunasan Berhasil"
-              : "Masuk Antrean Luring"}
+            {hasil.mode === "online" ? "Pelunasan Berhasil" : "Masuk Antrean Luring"}
           </h3>
           <p
-            className={`text-sm ${hasil.mode === "online" ? "text-on-primary-container" : "text-on-tertiary-container"}`}
+            className={`text-sm ${
+              hasil.mode === "online" ? "text-on-success-container" : "text-on-tertiary-container"
+            }`}
           >
             {hasil.mode === "online"
               ? `Kontrak ${detail?.no_kontrak ?? ""} telah dilunasi sebesar ${rupiah(p?.totalPelunasan ?? 0)}.`

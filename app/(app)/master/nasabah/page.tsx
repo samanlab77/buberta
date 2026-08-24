@@ -1,5 +1,6 @@
 "use client";
 
+import { UserPlus } from "lucide-react";
 import { apiClient, type Nasabah } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import { Memuat, Galat, Kosong } from "@/components/DataState";
@@ -11,18 +12,19 @@ export default function NasabahPage() {
   const nasabah = data ?? [];
 
   return (
-    <div className="bg-surface-container-low rounded-xl shadow-md1 overflow-hidden">
-      <div className="p-5 flex items-center justify-between">
+    <div className="summary-card animate-fade-in overflow-hidden !p-0">
+      <div className="p-6 flex items-center justify-between border-b border-outline-variant">
         <div>
-          <h2 className="text-lg font-semibold text-surface-on">
+          <h2 className="text-lg font-bold text-surface-on">
             Data Nasabah
           </h2>
           <p className="text-sm text-surface-on-variant">
             {loading ? "Memuat…" : `${nasabah.length} nasabah terdaftar`}
           </p>
         </div>
-        <button className="px-4 py-2 rounded-lg bg-primary text-on-primary font-medium text-sm">
-          + Tambah Nasabah
+        <button className="btn-primary px-5 py-2.5 text-sm flex items-center gap-2">
+          <UserPlus size={16} />
+          Tambah Nasabah
         </button>
       </div>
       {loading ? (
@@ -33,33 +35,44 @@ export default function NasabahPage() {
         <Kosong pesan="Belum ada nasabah terdaftar." />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-outline-variant text-surface-on-variant">
-                <th className="text-left py-3 px-4">No</th>
-                <th className="text-left py-3 px-4">Nama</th>
-                <th className="text-left py-3 px-4">NIK</th>
-                <th className="text-left py-3 px-4">Alamat</th>
-                <th className="text-left py-3 px-4">Pekerjaan</th>
-                <th className="text-left py-3 px-4">Kontak</th>
-                <th className="text-left py-3 px-4">Status</th>
+              <tr>
+                <th className="text-left">No</th>
+                <th className="text-left">Nama</th>
+                <th className="text-left">NIK</th>
+                <th className="text-left hidden lg:table-cell">Alamat</th>
+                <th className="text-left hidden md:table-cell">Pekerjaan</th>
+                <th className="text-left hidden sm:table-cell">Kontak</th>
+                <th className="text-left">Status</th>
               </tr>
             </thead>
             <tbody>
               {nasabah.map((n) => (
-                <tr
-                  key={n.id}
-                  className="border-b border-outline-variant/50 hover:bg-surface-container"
-                >
-                  <td className="py-3 px-4">{n.no_nasabah}</td>
-                  <td className="py-3 px-4 font-medium">{n.nama}</td>
-                  <td className="py-3 px-4">{n.nik}</td>
-                  <td className="py-3 px-4">{n.alamat}</td>
-                  <td className="py-3 px-4">{n.pekerjaan}</td>
-                  <td className="py-3 px-4">{n.telepon}</td>
-                  <td className="py-3 px-4">
+                <tr key={n.id}>
+                  <td className="text-surface-on-variant font-mono text-xs">
+                    {n.no_nasabah}
+                  </td>
+                  <td>
+                    <div className="font-semibold">{n.nama}</div>
+                  </td>
+                  <td className="font-mono text-xs text-surface-on-variant">
+                    {n.nik}
+                  </td>
+                  <td className="hidden lg:table-cell text-surface-on-variant">
+                    {n.alamat}
+                  </td>
+                  <td className="hidden md:table-cell text-surface-on-variant">
+                    {n.pekerjaan}
+                  </td>
+                  <td className="hidden sm:table-cell text-surface-on-variant">
+                    {n.telepon}
+                  </td>
+                  <td>
                     <span
-                      className={`px-3 py-1 rounded text-xs font-medium ${n.status === "aktif" ? "bg-primary-container text-on-primary-container" : "bg-surface-variant text-surface-on-variant"}`}
+                      className={`chip ${
+                        n.status === "aktif" ? "chip-blue" : "bg-surface-container text-surface-on-variant"
+                      }`}
                     >
                       {n.status === "aktif" ? "Aktif" : "Nonaktif"}
                     </span>

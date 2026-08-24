@@ -1,5 +1,6 @@
 "use client";
 
+import { FileText } from "lucide-react";
 import { rupiah, rupiahRingkas } from "@/lib/utils";
 import { apiClient, type LppRow } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
@@ -19,23 +20,19 @@ export default function LppPage() {
       realisasiB: acc.realisasiB + r.realisasi_b,
       saldo: acc.saldo + r.saldo,
     }),
-    {
-      alokasi: 0,
-      targetP: 0,
-      targetB: 0,
-      realisasiP: 0,
-      realisasiB: 0,
-      saldo: 0,
-    },
+    { alokasi: 0, targetP: 0, targetB: 0, realisasiP: 0, realisasiB: 0, saldo: 0 },
   );
 
   return (
-    <div className="bg-surface-container-low rounded-xl shadow-md1 overflow-hidden">
-      <div className="p-5">
-        <h2 className="text-lg font-semibold text-surface-on">
-          LPP — Laporan Pinjaman & Penerimaan
-        </h2>
-        <p className="text-sm text-surface-on-variant">Rekap seluruh kontrak</p>
+    <div className="summary-card animate-fade-in overflow-hidden !p-0">
+      <div className="p-6 border-b border-outline-variant">
+        <div className="flex items-center gap-2">
+          <FileText size={18} className="text-primary" />
+          <h2 className="text-lg font-bold text-surface-on">
+            LPP — Laporan Pinjaman & Penerimaan
+          </h2>
+        </div>
+        <p className="text-sm text-surface-on-variant mt-1">Rekap seluruh kontrak</p>
       </div>
       {loading ? (
         <Memuat />
@@ -45,65 +42,42 @@ export default function LppPage() {
         <Kosong pesan="Belum ada data pinjaman." />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-outline-variant text-surface-on-variant">
-                <th className="text-left py-3 px-3">No</th>
-                <th className="text-left py-3 px-3">Nama</th>
-                <th className="text-right py-3 px-3">Alokasi</th>
-                <th className="text-right py-3 px-3">Target Pokok</th>
-                <th className="text-right py-3 px-3">Target Jasa</th>
-                <th className="text-right py-3 px-3">Realisasi Pokok</th>
-                <th className="text-right py-3 px-3">Realisasi Jasa</th>
-                <th className="text-right py-3 px-3">Saldo</th>
+              <tr>
+                <th className="text-left">No</th>
+                <th className="text-left">Nama</th>
+                <th className="text-right">Alokasi</th>
+                <th className="text-right">Target Pokok</th>
+                <th className="text-right">Target Jasa</th>
+                <th className="text-right">Realisasi Pokok</th>
+                <th className="text-right">Realisasi Jasa</th>
+                <th className="text-right">Saldo</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr
-                  key={r.no_nasabah}
-                  className="border-b border-outline-variant/50 hover:bg-surface-container"
-                >
-                  <td className="py-3 px-3">{r.no_nasabah}</td>
-                  <td className="py-3 px-3 font-medium">{r.nama}</td>
-                  <td className="text-right py-3 px-3">{rupiah(r.alokasi)}</td>
-                  <td className="text-right py-3 px-3">{rupiah(r.target_p)}</td>
-                  <td className="text-right py-3 px-3">{rupiah(r.target_b)}</td>
-                  <td className="text-right py-3 px-3">
-                    {rupiah(r.realisasi_p)}
-                  </td>
-                  <td className="text-right py-3 px-3">
-                    {rupiah(r.realisasi_b)}
-                  </td>
-                  <td className="text-right py-3 px-3 font-semibold">
-                    {rupiah(r.saldo)}
-                  </td>
+                <tr key={r.no_nasabah}>
+                  <td className="font-mono text-xs text-surface-on-variant">{r.no_nasabah}</td>
+                  <td className="font-semibold">{r.nama}</td>
+                  <td className="text-right">{rupiah(r.alokasi)}</td>
+                  <td className="text-right">{rupiah(r.target_p)}</td>
+                  <td className="text-right">{rupiah(r.target_b)}</td>
+                  <td className="text-right">{rupiah(r.realisasi_p)}</td>
+                  <td className="text-right">{rupiah(r.realisasi_b)}</td>
+                  <td className="text-right font-semibold">{rupiah(r.saldo)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-outline bg-surface-container font-bold">
-                <td className="py-3 px-3" colSpan={2}>
-                  TOTAL
-                </td>
-                <td className="text-right py-3 px-3">
-                  {rupiahRingkas(totals.alokasi)}
-                </td>
-                <td className="text-right py-3 px-3">
-                  {rupiahRingkas(totals.targetP)}
-                </td>
-                <td className="text-right py-3 px-3">
-                  {rupiahRingkas(totals.targetB)}
-                </td>
-                <td className="text-right py-3 px-3">
-                  {rupiahRingkas(totals.realisasiP)}
-                </td>
-                <td className="text-right py-3 px-3">
-                  {rupiahRingkas(totals.realisasiB)}
-                </td>
-                <td className="text-right py-3 px-3">
-                  {rupiahRingkas(totals.saldo)}
-                </td>
+              <tr className="bg-surface-container font-bold border-t-2 border-outline">
+                <td className="py-4 px-4" colSpan={2}>TOTAL</td>
+                <td className="text-right py-4 px-4">{rupiahRingkas(totals.alokasi)}</td>
+                <td className="text-right py-4 px-4">{rupiahRingkas(totals.targetP)}</td>
+                <td className="text-right py-4 px-4">{rupiahRingkas(totals.targetB)}</td>
+                <td className="text-right py-4 px-4">{rupiahRingkas(totals.realisasiP)}</td>
+                <td className="text-right py-4 px-4">{rupiahRingkas(totals.realisasiB)}</td>
+                <td className="text-right py-4 px-4">{rupiahRingkas(totals.saldo)}</td>
               </tr>
             </tfoot>
           </table>

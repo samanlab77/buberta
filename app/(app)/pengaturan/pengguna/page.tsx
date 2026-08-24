@@ -1,3 +1,7 @@
+"use client";
+
+import { Users, Plus, AlertTriangle } from "lucide-react";
+
 const penggunaData = [
   {
     nama: "Administrator",
@@ -20,59 +24,58 @@ const penggunaData = [
 ];
 
 const roleChip: Record<string, string> = {
-  admin: "bg-primary-container text-on-primary-container",
-  manager: "bg-tertiary-container text-on-tertiary-container",
+  admin: "chip-blue",
+  manager: "chip-yellow",
   kasir: "bg-secondary-container text-secondary-on-container",
 };
 
 export default function PenggunaPage() {
   return (
-    <div className="space-y-6">
-      <div className="bg-surface-container-low rounded-xl shadow-md1 overflow-hidden">
-        <div className="p-5 flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in">
+      <div className="summary-card overflow-hidden !p-0">
+        <div className="p-6 flex items-center justify-between border-b border-outline-variant">
           <div>
-            <h2 className="text-lg font-semibold text-surface-on">
+            <h2 className="text-lg font-bold text-surface-on flex items-center gap-2">
+              <Users size={18} className="text-primary" />
               Manajemen Pengguna
             </h2>
             <p className="text-sm text-surface-on-variant">
               {penggunaData.length} pengguna terdaftar · 3 peran
             </p>
           </div>
-          <button className="px-4 py-2 rounded-lg bg-primary text-on-primary font-medium text-sm hover:opacity-90">
-            + Tambah Pengguna
+          <button className="btn-primary px-5 py-2.5 text-sm flex items-center gap-2">
+            <Plus size={16} />
+            Tambah Pengguna
           </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-outline-variant text-surface-on-variant">
-                <th className="text-left py-3 px-4">Nama</th>
-                <th className="text-left py-3 px-4">Email</th>
-                <th className="text-left py-3 px-4">Peran</th>
-                <th className="text-left py-3 px-4">Hak Akses</th>
-                <th className="text-right py-3 px-4">Aksi</th>
+              <tr>
+                <th className="text-left">Nama</th>
+                <th className="text-left hidden sm:table-cell">Email</th>
+                <th className="text-left">Peran</th>
+                <th className="text-left hidden md:table-cell">Hak Akses</th>
+                <th className="text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {penggunaData.map((u) => (
-                <tr
-                  key={u.email}
-                  className="border-b border-outline-variant/50 hover:bg-surface-container"
-                >
-                  <td className="py-3 px-4 font-medium">{u.nama}</td>
-                  <td className="py-3 px-4">{u.email}</td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`px-3 py-1 rounded text-xs font-medium capitalize ${roleChip[u.role]}`}
-                    >
+                <tr key={u.email}>
+                  <td className="font-semibold">{u.nama}</td>
+                  <td className="hidden sm:table-cell text-surface-on-variant">
+                    {u.email}
+                  </td>
+                  <td>
+                    <span className={`chip capitalize ${roleChip[u.role]}`}>
                       {u.role}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-surface-on-variant">
+                  <td className="hidden md:table-cell text-surface-on-variant">
                     {u.deskripsi}
                   </td>
-                  <td className="text-right py-3 px-4">
-                    <button className="text-primary font-medium hover:underline">
+                  <td className="text-right">
+                    <button className="text-primary font-medium text-sm hover:underline transition-colors">
                       Edit
                     </button>
                   </td>
@@ -83,10 +86,11 @@ export default function PenggunaPage() {
         </div>
       </div>
 
-      <div className="bg-tertiary-container rounded-xl p-5">
+      <div className="bg-tertiary-container rounded-xl p-5 flex items-start gap-3 animate-fade-in">
+        <AlertTriangle size={18} className="text-on-tertiary-container shrink-0 mt-0.5" />
         <div className="text-sm text-on-tertiary-container">
-          ⚠️ Kata sandi awal semua akun:{" "}
-          <code className="font-mono font-semibold">admin123</code>. Wajib
+          Kata sandi awal semua akun:{" "}
+          <code className="font-mono font-bold">admin123</code>. Wajib
           diganti saat login pertama di lingkungan produksi.
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { FileText, Calculator, Save, CheckCircle2 } from "lucide-react";
 import { hitungKredit, type KreditResult } from "@/lib/kredit";
 import { rupiah, tanggal } from "@/lib/utils";
 import {
@@ -77,23 +78,27 @@ export default function AkadPage() {
   };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      <div className="bg-surface-container-low rounded-xl p-6 shadow-md1">
-        <h2 className="text-lg font-semibold text-surface-on mb-4">
-          Pengajuan Kredit (Akad)
-        </h2>
+    <div className="grid lg:grid-cols-2 gap-6 animate-fade-in">
+      {/* Form */}
+      <div className="summary-card">
+        <div className="flex items-center gap-2 mb-5">
+          <FileText size={18} className="text-primary" />
+          <h2 className="text-lg font-bold text-surface-on">
+            Pengajuan Kredit (Akad)
+          </h2>
+        </div>
         <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-surface-on-variant block mb-1">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-surface-on">
               Nasabah
             </label>
             <select
               value={nasabahId}
               onChange={(e) => setNasabahId(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+              className="input-md3"
             >
               <option value="">
-                {nasabahQ.loading ? "Memuat nasabah…" : "-- Pilih Nasabah --"}
+                {nasabahQ.loading ? "Memuat nasabah…" : "— Pilih Nasabah —"}
               </option>
               {(nasabahQ.data ?? []).map((n) => (
                 <option key={n.id} value={n.id}>
@@ -102,17 +107,17 @@ export default function AkadPage() {
               ))}
             </select>
           </div>
-          <div>
-            <label className="text-sm font-medium text-surface-on-variant block mb-1">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-surface-on">
               Produk (opsional)
             </label>
             <select
               value={produkId}
               onChange={(e) => pilihProduk(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+              className="input-md3"
             >
               <option value="">
-                {produkQ.loading ? "Memuat produk…" : "-- Tanpa produk --"}
+                {produkQ.loading ? "Memuat produk…" : "— Tanpa produk —"}
               </option>
               {(produkQ.data ?? []).map((p) => (
                 <option key={p.id} value={p.id}>
@@ -121,41 +126,43 @@ export default function AkadPage() {
               ))}
             </select>
           </div>
-          <div>
-            <label className="text-sm font-medium text-surface-on-variant block mb-1">
-              Harga Jual (Rp)
-            </label>
-            <input
-              type="number"
-              value={harga}
-              onChange={(e) => setHarga(e.target.value)}
-              placeholder="0"
-              className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-surface-on">
+                Harga Jual (Rp)
+              </label>
+              <input
+                type="number"
+                value={harga}
+                onChange={(e) => setHarga(e.target.value)}
+                placeholder="0"
+                className="input-md3"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-surface-on">
+                DP (Rp)
+              </label>
+              <input
+                type="number"
+                value={dp}
+                onChange={(e) => setDp(e.target.value)}
+                placeholder="0"
+                className="input-md3"
+              />
+            </div>
           </div>
-          <div>
-            <label className="text-sm font-medium text-surface-on-variant block mb-1">
-              DP (Rp)
-            </label>
-            <input
-              type="number"
-              value={dp}
-              onChange={(e) => setDp(e.target.value)}
-              placeholder="0"
-              className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-surface-on-variant block mb-1">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-surface-on">
               Tenor (bulan)
             </label>
             <select
               value={tenor}
               onChange={(e) => setTenor(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+              className="input-md3"
             >
               <option value="">
-                {tenorQ.loading ? "Memuat tenor…" : "-- Pilih Tenor --"}
+                {tenorQ.loading ? "Memuat tenor…" : "— Pilih Tenor —"}
               </option>
               {daftarTenor.map((t) => (
                 <option key={t.id} value={String(t.tenor_bulan)}>
@@ -167,44 +174,39 @@ export default function AkadPage() {
           <button
             onClick={handleCalc}
             disabled={!tenor}
-            className="w-full py-3 rounded-lg bg-primary text-on-primary font-semibold hover:opacity-90 disabled:opacity-60"
+            className="btn-primary w-full py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
           >
+            <Calculator size={16} />
             Hitung & Buat Jadwal
           </button>
         </div>
       </div>
 
+      {/* Result */}
       <div className="space-y-4">
         {result ? (
           <>
-            <div className="bg-surface-container-low rounded-xl p-6 shadow-md1">
-              <h2 className="text-lg font-semibold text-surface-on mb-4">
-                Ringkasan
-              </h2>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-surface-on-variant">
-                    Pokok Pinjaman
-                  </span>
-                  <span className="font-semibold">
-                    {rupiah(result.pokokPinjaman)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-surface-on-variant">
-                    Jasa Total ({(rate * 100).toFixed(1).replace(".", ",")}% ×{" "}
-                    {tenor} bln)
-                  </span>
-                  <span className="font-semibold">
-                    {rupiah(result.jasaTotal)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-surface-on-variant">Total</span>
-                  <span className="font-semibold">{rupiah(result.total)}</span>
-                </div>
-                <div className="flex justify-between border-t border-outline-variant pt-2">
-                  <span className="text-surface-on-variant">
+            <div className="summary-card">
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle2 size={18} className="text-primary" />
+                <h2 className="text-lg font-bold text-surface-on">Ringkasan</h2>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { label: "Pokok Pinjaman", value: rupiah(result.pokokPinjaman) },
+                  {
+                    label: `Jasa Total (${(rate * 100).toFixed(1).replace(".", ",")}% × ${tenor} bln)`,
+                    value: rupiah(result.jasaTotal),
+                  },
+                  { label: "Total", value: rupiah(result.total) },
+                ].map((row) => (
+                  <div key={row.label} className="flex justify-between text-sm">
+                    <span className="text-surface-on-variant">{row.label}</span>
+                    <span className="font-semibold">{row.value}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between border-t border-outline-variant pt-3">
+                  <span className="text-surface-on-variant font-medium">
                     Angsuran/Bulan
                   </span>
                   <span className="font-bold text-primary text-lg">
@@ -215,8 +217,9 @@ export default function AkadPage() {
               <button
                 onClick={() => void simpan()}
                 disabled={!nasabahId || !harga || menyimpan}
-                className="w-full mt-4 py-3 rounded-lg bg-primary text-on-primary font-semibold hover:opacity-90 disabled:opacity-60"
+                className="btn-primary w-full mt-5 py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
               >
+                <Save size={16} />
                 {menyimpan ? "Menyimpan…" : "Simpan Akad"}
               </button>
               {!nasabahId && (
@@ -226,7 +229,11 @@ export default function AkadPage() {
               )}
               {pesan && (
                 <div
-                  className={`mt-3 rounded-lg py-2 px-3 text-sm text-center ${pesan.mode === "online" ? "bg-primary-container text-on-primary-container" : "bg-tertiary-container text-on-tertiary-container"}`}
+                  className={`mt-3 rounded-xl py-2.5 px-4 text-sm text-center font-medium animate-fade-in ${
+                    pesan.mode === "online"
+                      ? "chip-green"
+                      : "chip-yellow"
+                  }`}
                 >
                   {pesan.mode === "online"
                     ? "✅ Akad tersimpan ke server."
@@ -234,42 +241,36 @@ export default function AkadPage() {
                 </div>
               )}
             </div>
-            <div className="bg-surface-container-low rounded-xl p-6 shadow-md1">
-              <h2 className="text-lg font-semibold text-surface-on mb-4">
-                Jadwal Angsuran
-              </h2>
+
+            <div className="summary-card overflow-hidden !p-0">
+              <div className="p-5 border-b border-outline-variant">
+                <h2 className="text-lg font-bold text-surface-on">
+                  Jadwal Angsuran
+                </h2>
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="data-table">
                   <thead>
-                    <tr className="border-b border-outline-variant text-surface-on-variant">
-                      <th className="text-left py-2 px-2">Bulan</th>
-                      <th className="text-left py-2 px-2">Jatuh Tempo</th>
-                      <th className="text-right py-2 px-2">Pokok</th>
-                      <th className="text-right py-2 px-2">Jasa</th>
-                      <th className="text-right py-2 px-2">Total</th>
-                      <th className="text-right py-2 px-2">Sisa</th>
+                    <tr>
+                      <th className="text-left">Bulan</th>
+                      <th className="text-left">Jatuh Tempo</th>
+                      <th className="text-right">Pokok</th>
+                      <th className="text-right">Jasa</th>
+                      <th className="text-right">Total</th>
+                      <th className="text-right">Sisa</th>
                     </tr>
                   </thead>
                   <tbody>
                     {result.jadwal.map((j) => (
-                      <tr
-                        key={j.bulanKe}
-                        className="border-b border-outline-variant/50"
-                      >
-                        <td className="py-2 px-2">{j.bulanKe}</td>
-                        <td className="py-2 px-2">
-                          {tanggal(j.tanggalJatuhTempo)}
-                        </td>
-                        <td className="text-right py-2 px-2">
-                          {rupiah(j.angsuranPokok)}
-                        </td>
-                        <td className="text-right py-2 px-2">
-                          {rupiah(j.jasa)}
-                        </td>
-                        <td className="text-right py-2 px-2 font-semibold">
+                      <tr key={j.bulanKe}>
+                        <td className="font-semibold">{j.bulanKe}</td>
+                        <td>{tanggal(j.tanggalJatuhTempo)}</td>
+                        <td className="text-right">{rupiah(j.angsuranPokok)}</td>
+                        <td className="text-right">{rupiah(j.jasa)}</td>
+                        <td className="text-right font-semibold">
                           {rupiah(j.totalAngsuran)}
                         </td>
-                        <td className="text-right py-2 px-2">
+                        <td className="text-right text-surface-on-variant">
                           {rupiah(j.sisaSaldo)}
                         </td>
                       </tr>
@@ -280,8 +281,11 @@ export default function AkadPage() {
             </div>
           </>
         ) : (
-          <div className="bg-surface-container-low rounded-xl p-6 shadow-md1 flex items-center justify-center text-surface-on-variant text-center min-h-[200px]">
-            Isi form di sebelah kiri untuk melihat jadwal angsuran
+          <div className="summary-card flex flex-col items-center justify-center text-surface-on-variant text-center min-h-[300px]">
+            <Calculator size={32} className="text-outline-variant mb-3" />
+            <p className="text-sm font-medium">
+              Isi form di sebelah kiri untuk melihat jadwal angsuran
+            </p>
           </div>
         )}
       </div>

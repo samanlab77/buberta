@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Building2, CheckCircle2 } from "lucide-react";
 
 export default function ProfilPage() {
   const [form, setForm] = useState({
@@ -18,14 +19,15 @@ export default function ProfilPage() {
   };
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div className="bg-surface-container-low rounded-xl p-6 shadow-md1">
+    <div className="max-w-2xl space-y-6 animate-fade-in">
+      <div className="summary-card">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center text-2xl font-bold">
+          <div className="w-16 h-16 rounded-2xl bg-primary text-on-primary flex items-center justify-center text-2xl font-bold shadow-md1">
             B3
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-surface-on">
+            <h2 className="text-lg font-bold text-surface-on flex items-center gap-2">
+              <Building2 size={18} className="text-primary" />
               Profil Perusahaan
             </h2>
             <p className="text-sm text-surface-on-variant">
@@ -34,69 +36,70 @@ export default function ProfilPage() {
           </div>
         </div>
         <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-surface-on-variant block mb-1">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-surface-on">
               Nama Lembaga
             </label>
             <input
               value={form.nama}
               onChange={(e) => set("nama", e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+              className="input-md3"
             />
           </div>
-          <div>
-            <label className="text-sm font-medium text-surface-on-variant block mb-1">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-surface-on">
               Alamat
             </label>
             <textarea
               value={form.alamat}
               onChange={(e) => set("alamat", e.target.value)}
               rows={2}
-              className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+              className="input-md3 h-auto py-3 resize-none"
             />
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-surface-on-variant block mb-1">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-surface-on">
                 Telepon
               </label>
               <input
                 value={form.telepon}
                 onChange={(e) => set("telepon", e.target.value)}
                 placeholder="08xx-xxxx-xxxx"
-                className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+                className="input-md3"
               />
             </div>
-            <div>
-              <label className="text-sm font-medium text-surface-on-variant block mb-1">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-surface-on">
                 Email
               </label>
               <input
                 value={form.email}
                 onChange={(e) => set("email", e.target.value)}
                 placeholder="info@buberta.id"
-                className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+                className="input-md3"
               />
             </div>
           </div>
-          <div>
-            <label className="text-sm font-medium text-surface-on-variant block mb-1">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-surface-on">
               Persentase Jasa Default (% / bulan)
             </label>
             <input
               value={form.jasaDefault}
               onChange={(e) => set("jasaDefault", e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+              className="input-md3"
             />
           </div>
           <button
             onClick={() => setTersimpan(true)}
-            className="w-full py-3 rounded-lg bg-primary text-on-primary font-semibold hover:opacity-90"
+            className="btn-primary w-full py-3 text-sm flex items-center justify-center gap-2"
           >
+            <CheckCircle2 size={16} />
             Simpan Profil
           </button>
           {tersimpan && (
-            <div className="text-center text-sm bg-primary-container text-on-primary-container rounded-lg py-2">
+            <div className="chip chip-green w-full justify-center py-2.5 animate-fade-in">
               ✅ Profil berhasil disimpan
             </div>
           )}

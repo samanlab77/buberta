@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { RefreshCw, Trash2, Clock } from "lucide-react";
 import { daftarAntrean, hapusAntrean, prosesAntrean } from "@/lib/sync";
 import type { AntreanTransaksi } from "@/lib/dexie";
 
 const warnaStatus: Record<string, string> = {
-  pending: "bg-tertiary-container text-on-tertiary-container",
-  syncing: "bg-primary-container text-on-primary-container",
-  gagal: "bg-error-container text-on-error-container",
+  pending: "chip-yellow",
+  syncing: "chip-blue",
+  gagal: "chip-red",
 };
 
 export default function PanelAntrean() {
@@ -47,50 +48,55 @@ export default function PanelAntrean() {
   if (items.length === 0) return null;
 
   return (
-    <div className="bg-surface-container-low rounded-xl shadow-md1 overflow-hidden">
-      <div className="p-5 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-surface-on">
-            Antrean Luring
-          </h2>
-          <p className="text-sm text-surface-on-variant">
-            {items.length} transaksi menunggu dikirim ke server
-          </p>
+    <div className="summary-card overflow-hidden !p-0 animate-fade-in">
+      <div className="p-6 flex items-center justify-between gap-3 border-b border-outline-variant">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-tertiary-container text-on-tertiary-container flex items-center justify-center">
+            <Clock size={20} />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-surface-on">
+              Antrean Luring
+            </h2>
+            <p className="text-sm text-surface-on-variant">
+              {items.length} transaksi menunggu dikirim ke server
+            </p>
+          </div>
         </div>
         <button
           onClick={() => void sinkron()}
           disabled={sibuk}
-          className="px-4 py-2 rounded-lg bg-primary text-on-primary font-medium text-sm hover:opacity-90 disabled:opacity-60"
+          className="btn-primary px-5 py-2.5 text-sm flex items-center gap-2 disabled:opacity-50"
         >
-          {sibuk ? "Menyinkron\u2026" : "Sinkronkan Sekarang"}
+          <RefreshCw size={14} className={sibuk ? "animate-spin" : ""} />
+          {sibuk ? "Menyinkron…" : "Sinkronkan Sekarang"}
         </button>
       </div>
-      <div className="border-t border-outline-variant divide-y divide-outline-variant">
+      <div>
         {items.map((it) => (
           <div
             key={it.id}
-            className="px-5 py-3 flex items-center justify-between gap-3"
+            className="px-6 py-4 flex items-center justify-between gap-3 border-b border-outline-variant last:border-b-0"
           >
             <div className="min-w-0">
-              <div className="font-medium text-surface-on truncate">
+              <div className="font-semibold text-surface-on truncate">
                 {it.ringkasan}
               </div>
-              <div className="text-xs text-surface-on-variant">
+              <div className="text-xs text-surface-on-variant mt-0.5">
                 {it.jenis} · {new Date(it.dibuatPada).toLocaleString("id-ID")}
                 {it.pesanError ? ` · ${it.pesanError}` : ""}
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span
-                className={`px-2.5 py-1 rounded text-xs font-medium capitalize ${warnaStatus[it.status] ?? ""}`}
-              >
+              <span className={`chip capitalize ${warnaStatus[it.status] ?? ""}`}>
                 {it.status}
               </span>
               <button
                 onClick={() => void hapus(it.id)}
-                className="text-error text-xs font-medium hover:underline"
+                className="p-2 rounded-lg hover:bg-error-container text-surface-on-variant hover:text-error transition-colors"
+                aria-label="Hapus"
               >
-                Hapus
+                <Trash2 size={14} />
               </button>
             </div>
           </div>

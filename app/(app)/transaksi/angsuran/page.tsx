@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CreditCard, FileText, CheckCircle2 } from "lucide-react";
 import { rupiah, tanggal } from "@/lib/utils";
 import { simpanTransaksi } from "@/lib/sync";
 import {
@@ -41,18 +42,10 @@ export default function AngsuranPage() {
     setDetail(null);
     apiClient
       .getKontrak(noKontrak)
-      .then((d) => {
-        if (!batal) setDetail(d);
-      })
-      .catch(() => {
-        if (!batal) setDetail(null);
-      })
-      .finally(() => {
-        if (!batal) setMemuatDetail(false);
-      });
-    return () => {
-      batal = true;
-    };
+      .then((d) => { if (!batal) setDetail(d); })
+      .catch(() => { if (!batal) setDetail(null); })
+      .finally(() => { if (!batal) setMemuatDetail(false); });
+    return () => { batal = true; };
   }, [noKontrak]);
 
   const terima = async () => {
@@ -73,10 +66,7 @@ export default function AngsuranPage() {
       setPesan({ mode: hasil.mode });
       if (hasil.mode === "online") {
         void terbaruQ.muatUlang();
-        apiClient
-          .getKontrak(noKontrak)
-          .then(setDetail)
-          .catch(() => {});
+        apiClient.getKontrak(noKontrak).then(setDetail).catch(() => {});
       }
     } finally {
       setMenyimpan(false);
@@ -86,24 +76,28 @@ export default function AngsuranPage() {
   const terbaru = terbaruQ.data ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-surface-container-low rounded-xl p-6 shadow-md1">
-          <h2 className="text-lg font-semibold text-surface-on mb-4">
-            Penerimaan Angsuran
-          </h2>
+        {/* Form */}
+        <div className="summary-card">
+          <div className="flex items-center gap-2 mb-5">
+            <CreditCard size={18} className="text-primary" />
+            <h2 className="text-lg font-bold text-surface-on">
+              Penerimaan Angsuran
+            </h2>
+          </div>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-surface-on-variant block mb-1">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-surface-on">
                 No. Kontrak
               </label>
               <select
                 value={noKontrak}
                 onChange={(e) => setNoKontrak(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+                className="input-md3"
               >
                 <option value="">
-                  {kontrakQ.loading ? "Memuat kontrak…" : "-- Pilih Kontrak --"}
+                  {kontrakQ.loading ? "Memuat kontrak…" : "— Pilih Kontrak —"}
                 </option>
                 {daftarKontrak.map((k) => (
                   <option key={k.id} value={k.no_kontrak}>
@@ -113,38 +107,36 @@ export default function AngsuranPage() {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="text-sm font-medium text-surface-on-variant block mb-1">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-surface-on">
                 Bulan ke-
               </label>
               <input
                 type="number"
                 value={bulan}
                 onChange={(e) => setBulan(e.target.value)}
-                placeholder={
-                  detail ? String(detail.angsuran_terbayar + 1) : "1"
-                }
-                className="w-full px-4 py-3 rounded-lg border border-outline-variant bg-surface text-surface-on"
+                placeholder={detail ? String(detail.angsuran_terbayar + 1) : "1"}
+                className="input-md3"
               />
             </div>
-            <div className="bg-surface-container rounded-lg p-4 space-y-2">
-              <div className="text-sm font-medium text-surface-on-variant mb-2">
+            <div className="bg-surface-container rounded-xl p-4 space-y-2">
+              <div className="text-sm font-semibold text-surface-on-variant mb-2">
                 Pemecahan Otomatis
               </div>
               <div className="flex justify-between text-sm">
-                <span>Pokok</span>
+                <span className="text-surface-on-variant">Pokok</span>
                 <span className="font-semibold">
                   {detail ? rupiah(detail.angsuran_pokok_bulanan) : "—"}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Jasa</span>
+                <span className="text-surface-on-variant">Jasa</span>
                 <span className="font-semibold">
                   {detail ? rupiah(detail.jasa_bulanan) : "—"}
                 </span>
               </div>
               <div className="flex justify-between border-t border-outline-variant pt-2 text-base">
-                <span className="font-medium">Total</span>
+                <span className="font-medium text-surface-on">Total</span>
                 <span className="font-bold text-primary">
                   {detail ? rupiah(detail.total_angsuran_bulanan) : "—"}
                 </span>
@@ -153,13 +145,15 @@ export default function AngsuranPage() {
             <button
               onClick={() => void terima()}
               disabled={!detail || menyimpan}
-              className="w-full py-3 rounded-lg bg-primary text-on-primary font-semibold hover:opacity-90 disabled:opacity-60"
+              className="btn-primary w-full py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {menyimpan ? "Menyimpan…" : "Terima Angsuran"}
             </button>
             {pesan && (
               <div
-                className={`rounded-lg py-2 px-3 text-sm text-center ${pesan.mode === "online" ? "bg-primary-container text-on-primary-container" : "bg-tertiary-container text-on-tertiary-container"}`}
+                className={`rounded-xl py-2.5 px-4 text-sm text-center font-medium animate-fade-in ${
+                  pesan.mode === "online" ? "chip-green" : "chip-yellow"
+                }`}
               >
                 {pesan.mode === "online"
                   ? "✅ Angsuran tersimpan ke server."
@@ -169,59 +163,38 @@ export default function AngsuranPage() {
           </div>
         </div>
 
-        <div className="bg-surface-container-low rounded-xl p-6 shadow-md1">
-          <h2 className="text-lg font-semibold text-surface-on mb-4">
-            Info Kontrak
-          </h2>
+        {/* Info Kontrak */}
+        <div className="summary-card">
+          <div className="flex items-center gap-2 mb-5">
+            <FileText size={18} className="text-primary" />
+            <h2 className="text-lg font-bold text-surface-on">Info Kontrak</h2>
+          </div>
           {memuatDetail ? (
             <Memuat pesan="Memuat kontrak…" />
           ) : detail ? (
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-surface-on-variant">Nasabah</span>
-                <span className="font-medium">
-                  {detail.nasabah_nama ?? "-"}
-                  {detail.no_nasabah ? ` (${detail.no_nasabah})` : ""}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-surface-on-variant">Pokok Pinjaman</span>
-                <span className="font-medium">
-                  {rupiah(detail.pokok_pinjaman)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-surface-on-variant">Tenor</span>
-                <span className="font-medium">{detail.tenor} bulan</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-surface-on-variant">Angsuran/Bulan</span>
-                <span className="font-medium">
-                  {rupiah(detail.total_angsuran_bulanan)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-surface-on-variant">Sudah Dibayar</span>
-                <span className="font-medium">
-                  {detail.angsuran_terbayar} bulan
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-surface-on-variant">Sisa Saldo</span>
-                <span className="font-medium">
-                  {rupiah(detail.saldo_pinjaman)}
-                </span>
-              </div>
+              {[
+                { label: "Nasabah", value: `${detail.nasabah_nama ?? "-"}${detail.no_nasabah ? ` (${detail.no_nasabah})` : ""}` },
+                { label: "Pokok Pinjaman", value: rupiah(detail.pokok_pinjaman) },
+                { label: "Tenor", value: `${detail.tenor} bulan` },
+                { label: "Angsuran/Bulan", value: rupiah(detail.total_angsuran_bulanan) },
+                { label: "Sudah Dibayar", value: `${detail.angsuran_terbayar} bulan` },
+                { label: "Sisa Saldo", value: rupiah(detail.saldo_pinjaman) },
+              ].map((row) => (
+                <div key={row.label} className="flex justify-between text-sm">
+                  <span className="text-surface-on-variant">{row.label}</span>
+                  <span className="font-medium">{row.value}</span>
+                </div>
+              ))}
               <div className="flex justify-between items-center">
-                <span className="text-surface-on-variant">Status</span>
-                <span className="px-3 py-1 rounded text-xs font-medium bg-primary-container text-on-primary-container">
-                  {detail.status}
-                </span>
+                <span className="text-surface-on-variant text-sm">Status</span>
+                <span className="chip chip-blue">{detail.status}</span>
               </div>
             </div>
           ) : (
-            <div className="text-surface-on-variant text-center py-8">
-              Pilih kontrak untuk melihat detail
+            <div className="flex flex-col items-center justify-center text-surface-on-variant py-12">
+              <FileText size={28} className="text-outline-variant mb-2" />
+              <p className="text-sm font-medium">Pilih kontrak untuk melihat detail</p>
             </div>
           )}
         </div>
@@ -229,9 +202,10 @@ export default function AngsuranPage() {
 
       <PanelAntrean />
 
-      <div className="bg-surface-container-low rounded-xl shadow-md1 overflow-hidden">
-        <div className="p-5">
-          <h2 className="text-lg font-semibold text-surface-on">
+      {/* Recent payments */}
+      <div className="summary-card overflow-hidden !p-0">
+        <div className="p-6 border-b border-outline-variant">
+          <h2 className="text-lg font-bold text-surface-on">
             Penerimaan Terbaru
           </h2>
         </div>
@@ -243,37 +217,27 @@ export default function AngsuranPage() {
           <Kosong pesan="Belum ada penerimaan." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="data-table">
               <thead>
-                <tr className="border-b border-outline-variant text-surface-on-variant">
-                  <th className="text-left py-3 px-4">Bukti</th>
-                  <th className="text-left py-3 px-4">Tanggal</th>
-                  <th className="text-left py-3 px-4">Nasabah</th>
-                  <th className="text-right py-3 px-4">Pokok</th>
-                  <th className="text-right py-3 px-4">Jasa</th>
-                  <th className="text-right py-3 px-4">Total</th>
+                <tr>
+                  <th className="text-left">Tanggal</th>
+                  <th className="text-left">Nasabah</th>
+                  <th className="text-right">Pokok</th>
+                  <th className="text-right">Jasa</th>
+                  <th className="text-right">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {terbaru.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b border-outline-variant/50 hover:bg-surface-container"
-                  >
-                    <td className="py-3 px-4 font-medium">
-                      {p.id.slice(0, 8)}
+                  <tr key={p.id}>
+                    <td>{tanggal(p.tanggal_bayar)}</td>
+                    <td>
+                      <div className="font-medium">{p.nama}</div>
+                      <div className="text-xs text-surface-on-variant">{p.no_nasabah}</div>
                     </td>
-                    <td className="py-3 px-4">{tanggal(p.tanggal_bayar)}</td>
-                    <td className="py-3 px-4">
-                      {p.nama} ({p.no_nasabah})
-                    </td>
-                    <td className="text-right py-3 px-4">
-                      {rupiah(p.pokok_bayar)}
-                    </td>
-                    <td className="text-right py-3 px-4">
-                      {rupiah(p.jasa_bayar)}
-                    </td>
-                    <td className="text-right py-3 px-4 font-semibold">
+                    <td className="text-right">{rupiah(p.pokok_bayar)}</td>
+                    <td className="text-right">{rupiah(p.jasa_bayar)}</td>
+                    <td className="text-right font-semibold text-primary">
                       {rupiah(p.total)}
                     </td>
                   </tr>
