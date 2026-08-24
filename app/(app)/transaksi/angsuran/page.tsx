@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CreditCard, FileText, CheckCircle2, Printer, Download } from "lucide-react";
+import {
+  CreditCard,
+  FileText,
+  CheckCircle2,
+  Printer,
+  Trash2,
+  AlertTriangle,
+} from "lucide-react";
 import { rupiah, tanggal } from "@/lib/utils";
 import {
   apiClient,
@@ -31,6 +38,10 @@ export default function AngsuranPage() {
   const [pesan, setPesan] = useState<string | null>(null);
   const [menyimpan, setMenyimpan] = useState(false);
 
+  // State untuk hapus angsuran
+  const [hapusKonfirmasi, setHapusKonfirmasi] = useState<PenerimaanTerbaru | null>(null);
+  const [menghapus, setMenghapus] = useState(false);
+
   useEffect(() => {
     if (!noKontrak) {
       setDetail(null);
@@ -53,7 +64,6 @@ export default function AngsuranPage() {
     setPesan(null);
     setHasil(null);
     try {
-      // Langsung kirim ke database (tanpa antrean luring)
       const result = await apiClient.createAngsuran({
         kontrakId: detail.id,
         bulanBerjalan: Number(bulan) || detail.angsuran_terbayar + 1,
@@ -61,7 +71,6 @@ export default function AngsuranPage() {
       });
       setHasil(result);
       setPesan("✅ Angsuran berhasil diterima dan tersimpan ke database.");
-      // Refresh data
       void terbaruQ.muatUlang();
       apiClient.getKontrak(noKontrak).then(setDetail).catch(() => {});
     } catch (err) {
@@ -81,6 +90,28 @@ export default function AngsuranPage() {
       hasil.jasa_bayar,
       hasil.total,
     );
+  };
+
+  const konfirmasiHapus = (item: PenerimaanTerbaru) => {
+    setHapusKonfirmasi(item);
+  };
+
+  const prosesHapus = async () => {
+    if (!hapusKonfirmasi) return;
+    setMenghapus(true);
+    try {
+      await apiClient.deleteAngsuran(hapusKonfirmasi.id);
+      setHapusKonfirmasi(null);
+      void terbaruQ.muatUlang();
+      // Refresh detail kontrak jika sedang melihat
+      if (detail) {
+        apiClient.getKontrak(noKontrak).then(setDetail).catch(() => {});
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Gagal menghapus angsuran");
+    } finally {
+      setMenghapus(false);
+    }
   };
 
   const terbaru = terbaruQ.data ?? [];
@@ -257,6 +288,9 @@ export default function AngsuranPage() {
           <h2 className="text-lg font-bold text-surface-on">
             Penerimaan Terbaru
           </h2>
+          <p className="text-sm text-surface-on-variant mt-1">
+            Klik ikon hapus untuk membatalkan angsuran yang salah input
+          </p>
         </div>
         {terbaruQ.loading ? (
           <Memuat />
@@ -274,6 +308,7 @@ export default function AngsuranPage() {
                   <th className="text-right">Pokok</th>
                   <th className="text-right">Jasa</th>
                   <th className="text-right">Total</th>
+                  <th className="text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -289,6 +324,16 @@ export default function AngsuranPage() {
                     <td className="text-right font-semibold text-primary">
                       {rupiah(p.total)}
                     </td>
+                    <td className="text-center">
+                      <button
+                        onClick={() => konfirmasiHapus(p)}
+                        className="p-2 rounded-lg hover:bg-error-container text-surface-on-variant hover:text-error transition-colors"
+                        title="Hapus angsuran ini"
+                        aria-label="Hapus angsuran"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -296,6 +341,89 @@ export default function AngsuranPage() {
           </div>
         )}
       </div>
+
+      {/* Modal Konfirmasi Hapus */}
+      {hapusKonfirmasi && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setHapusKonfirmasi(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-surface rounded-2xl shadow-md4 w-full max-w-md p-6 animate-fade-in-scale"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-error-container flex items-center justify-center shrink-0">
+                <AlertTriangle size={24} className="text-error" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-surface-on">
+                  Hapus Angsuran?
+                </h3>
+                <p className="text-sm text-surface-on-variant">
+                  Tindakan ini tidak dapat dibatalkan
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-surface-container rounded-xl p-4 mb-5">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-surface-on-variant">Nasabah</span>
+                  <span className="font-medium">{hapusKonfirmasi.nama}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-surface-on-variant">Tanggal</span>
+                  <span className="font-medium">{tanggal(hapusKonfirmasi.tanggal_bayar)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-surface-on-variant">Pokok</span>
+                  <span className="font-medium">{rupiah(hapusKonfirmasi.pokok_bayar)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-surface-on-variant">Jasa</span>
+                  <span className="font-medium">{rupiah(hapusKonfirmasi.jasa_bayar)}</span>
+                </div>
+                <div className="flex justify-between border-t border-outline-variant pt-2">
+                  <span className="font-medium">Total</span>
+                  <span className="font-bold text-error">{rupiah(hapusKonfirmasi.total)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-error-container/50 rounded-xl p-3 mb-5 text-sm text-on-error-container">
+              Data kontrak akan dipulihkan: saldo pinjaman bertambah, jumlah angsuran berkurang 1.
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setHapusKonfirmasi(null)}
+                className="btn-outline px-5 py-2.5 text-sm"
+                disabled={menghapus}
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => void prosesHapus()}
+                disabled={menghapus}
+                className="px-5 py-2.5 rounded-xl bg-error text-on-error font-semibold text-sm hover:shadow-md1 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {menghapus ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Menghapus…
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Ya, Hapus
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

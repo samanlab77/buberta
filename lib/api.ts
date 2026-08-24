@@ -67,6 +67,11 @@ export const apiClient = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  deleteAngsuran: (id: string) =>
+    api<{ ok: boolean; message: string; deleted: AngsuranResult }>(
+      `/angsuran/${id}`,
+      { method: "DELETE" },
+    ),
   createPelunasan: (data: { kontrakId: string }) =>
     api<PelunasanResult>("/pelunasan", {
       method: "POST",

@@ -623,3 +623,66 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   return new Response("Not found", { status: 404 });
 };
+
+export const onRequestDelete: PagesFunction<Env> = async (context) => {
+  const { env, params } = context;
+  const path = (params.route as string[]).join("/");
+
+  // Semua rute DELETE wajib memiliki sesi yang sah
+  const sesi = await bacaSesi(context.request, env);
+  if (!sesi) return galatJson(401, "Belum masuk");
+
+  // Hapus angsuran
+  if (path.startsWith("angsuran/")) {
+    const id = path.split("/")[1];
+    if (!id) return galatJson(400, "ID angsuran wajib diisi");
+
+    // Ambil data angsuran
+    const angsuran = (await env.DB.prepare(
+      "SELECT * FROM penerimaan_angsuran WHERE id = ?"
+    )
+      .bind(id)
+      .first()) as any;
+    if (!angsuran) return galatJson(404, "Data angsuran tidak ditemukan");
+
+    // Ambil data kontrak
+    const kontrak = (await env.DB.prepare(
+      "SELECT * FROM kontrak WHERE id = ?"
+    )
+      .bind(angsuran.kontrak_id)
+      .first()) as any;
+    if (!kontrak) return galatJson(404, "Kontrak tidak ditemukan");
+
+    // Hapus record penerimaan_angsuran
+    await env.DB.prepare("DELETE FROM penerimaan_angsuran WHERE id = ?")
+      .bind(id)
+      .run();
+
+    // Restore saldo pinjaman (tambah kembali pokok yang sudah dibayar)
+    await env.DB.prepare(
+      'UPDATE kontrak SET saldo_pinjaman = saldo_pinjaman + ?, angsuran_terbayar = angsuran_terbayar - 1, bulan_jasa_terbayar = bulan_jasa_terbayar - 1, updated_at = datetime("now") WHERE id = ?'
+    )
+      .bind(angsuran.pokok_bayar, angsuran.kontrak_id)
+      .run();
+
+    // Hapus record kas_bank yang terkait
+    await env.DB.prepare(
+      "DELETE FROM kas_bank WHERE referensi_id = ? AND referensi_tipe = 'angsuran'"
+    )
+      .bind(id)
+      .run();
+
+    return Response.json({
+      ok: true,
+      message: "Angsuran berhasil dihapus dan data kontrak dipulihkan",
+      deleted: {
+        id: angsuran.id,
+        pokok_bayar: angsuran.pokok_bayar,
+        jasa_bayar: angsuran.jasa_bayar,
+        total: angsuran.pokok_bayar + angsuran.jasa_bayar,
+      },
+    });
+  }
+
+  return new Response("Not found", { status: 404 });
+};
