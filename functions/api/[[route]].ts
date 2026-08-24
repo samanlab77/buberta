@@ -510,7 +510,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     await env.DB.prepare(
       `INSERT INTO kontrak (id, no_kontrak, nasabah_id, produk_id, harga_jual, dp,
       pokok_pinjaman, tenor, persentase_jasa, jasa_total, angsuran_pokok_bulanan, jasa_bulanan,
-      total_angsuran_bulanan, tanggal_akad, saldo_pinjaman) VALUES (?,?,?,?,?,?,?,?,0.015,?,?,?,?,?,?)`,
+      total_angsuran_bulanan, tanggal_akad, saldo_pinjaman) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     )
       .bind(
         id,
@@ -521,6 +521,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         body.dp,
         pokok,
         body.tenor,
+        0.015,
         jasaTotal,
         pokokBulanan,
         jasaBulanan,
