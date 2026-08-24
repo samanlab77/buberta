@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CreditCard, FileText, CheckCircle2 } from "lucide-react";
+import { CreditCard, FileText, CheckCircle2, Printer, Download } from "lucide-react";
 import { rupiah, tanggal } from "@/lib/utils";
-import { simpanTransaksi } from "@/lib/sync";
 import {
   apiClient,
   type Kontrak,
   type KontrakDetail,
   type PenerimaanTerbaru,
+  type AngsuranResult,
 } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import { Memuat, Galat, Kosong } from "@/components/DataState";
-import PanelAntrean from "@/components/PanelAntrean";
+import { generateInvoiceFromKontrak } from "@/lib/invoice";
 
 export default function AngsuranPage() {
   const kontrakQ = useApi<Kontrak[]>(() => apiClient.getKontrakList());
@@ -27,9 +27,8 @@ export default function AngsuranPage() {
   const [bulan, setBulan] = useState("");
   const [detail, setDetail] = useState<KontrakDetail | null>(null);
   const [memuatDetail, setMemuatDetail] = useState(false);
-  const [pesan, setPesan] = useState<{ mode: "online" | "antrean" } | null>(
-    null,
-  );
+  const [hasil, setHasil] = useState<AngsuranResult | null>(null);
+  const [pesan, setPesan] = useState<string | null>(null);
   const [menyimpan, setMenyimpan] = useState(false);
 
   useEffect(() => {
@@ -52,25 +51,36 @@ export default function AngsuranPage() {
     if (!detail) return;
     setMenyimpan(true);
     setPesan(null);
+    setHasil(null);
     try {
-      const hasil = await simpanTransaksi(
-        "angsuran",
-        "/api/angsuran",
-        {
-          kontrakId: detail.id,
-          bulanBerjalan: Number(bulan) || detail.angsuran_terbayar + 1,
-          jumlahAngsuran: detail.total_angsuran_bulanan,
-        },
-        `Angsuran ${detail.no_kontrak} · ${rupiah(detail.total_angsuran_bulanan)}`,
-      );
-      setPesan({ mode: hasil.mode });
-      if (hasil.mode === "online") {
-        void terbaruQ.muatUlang();
-        apiClient.getKontrak(noKontrak).then(setDetail).catch(() => {});
-      }
+      // Langsung kirim ke database (tanpa antrean luring)
+      const result = await apiClient.createAngsuran({
+        kontrakId: detail.id,
+        bulanBerjalan: Number(bulan) || detail.angsuran_terbayar + 1,
+        jumlahAngsuran: detail.total_angsuran_bulanan,
+      });
+      setHasil(result);
+      setPesan("✅ Angsuran berhasil diterima dan tersimpan ke database.");
+      // Refresh data
+      void terbaruQ.muatUlang();
+      apiClient.getKontrak(noKontrak).then(setDetail).catch(() => {});
+    } catch (err) {
+      setPesan(err instanceof Error ? `❌ ${err.message}` : "❌ Gagal menyimpan angsuran.");
     } finally {
       setMenyimpan(false);
     }
+  };
+
+  const cetakInvoice = () => {
+    if (!detail || !hasil) return;
+    const bulanKe = Number(bulan) || detail.angsuran_terbayar;
+    generateInvoiceFromKontrak(
+      detail,
+      bulanKe,
+      hasil.pokok_bayar,
+      hasil.jasa_bayar,
+      hasil.total,
+    );
   };
 
   const terbaru = terbaruQ.data ?? [];
@@ -93,7 +103,11 @@ export default function AngsuranPage() {
               </label>
               <select
                 value={noKontrak}
-                onChange={(e) => setNoKontrak(e.target.value)}
+                onChange={(e) => {
+                  setNoKontrak(e.target.value);
+                  setHasil(null);
+                  setPesan(null);
+                }}
                 className="input-md3"
               >
                 <option value="">
@@ -147,17 +161,18 @@ export default function AngsuranPage() {
               disabled={!detail || menyimpan}
               className="btn-primary w-full py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {menyimpan ? "Menyimpan…" : "Terima Angsuran"}
+              {menyimpan ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Menyimpan…
+                </>
+              ) : (
+                "Terima Angsuran"
+              )}
             </button>
             {pesan && (
-              <div
-                className={`rounded-xl py-2.5 px-4 text-sm text-center font-medium animate-fade-in ${
-                  pesan.mode === "online" ? "chip-green" : "chip-yellow"
-                }`}
-              >
-                {pesan.mode === "online"
-                  ? "✅ Angsuran tersimpan ke server."
-                  : "📥 Sedang luring — angsuran masuk antrean, terkirim otomatis saat online."}
+              <div className="rounded-xl py-2.5 px-4 text-sm text-center font-medium animate-fade-in bg-success-container text-on-success-container">
+                {pesan}
               </div>
             )}
           </div>
@@ -200,7 +215,41 @@ export default function AngsuranPage() {
         </div>
       </div>
 
-      <PanelAntrean />
+      {/* Invoice Berhasil */}
+      {hasil && detail && (
+        <div className="summary-card bg-gradient-to-r from-success-container/30 to-primary-container/30 border border-success/20 animate-fade-in-scale">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={24} className="text-success" />
+              </div>
+              <div>
+                <h3 className="font-bold text-surface-on text-lg">
+                  Pembayaran Berhasil!
+                </h3>
+                <p className="text-sm text-surface-on-variant mt-0.5">
+                  Angsuran {detail.no_kontrak} sebesar {rupiah(hasil.total)} telah diterima.
+                </p>
+                <div className="flex flex-wrap gap-3 mt-2 text-xs">
+                  <span className="bg-surface-container px-2 py-1 rounded-lg">
+                    Pokok: {rupiah(hasil.pokok_bayar)}
+                  </span>
+                  <span className="bg-surface-container px-2 py-1 rounded-lg">
+                    Jasa: {rupiah(hasil.jasa_bayar)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={cetakInvoice}
+              className="btn-primary px-6 py-3 text-sm flex items-center gap-2 shrink-0"
+            >
+              <Printer size={16} />
+              Cetak Invoice
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Recent payments */}
       <div className="summary-card overflow-hidden !p-0">
