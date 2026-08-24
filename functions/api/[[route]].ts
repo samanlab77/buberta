@@ -665,6 +665,51 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
   const sesi = await bacaSesi(context.request, env);
   if (!sesi) return galatJson(401, "Belum masuk");
 
+  // Hapus kontrak
+  if (path.startsWith("kontrak/")) {
+    const id = path.split("/")[1];
+    if (!id) return galatJson(400, "ID kontrak wajib diisi");
+
+    const kontrak = (await env.DB.prepare(
+      "SELECT * FROM kontrak WHERE id = ?"
+    )
+      .bind(id)
+      .first()) as any;
+    if (!kontrak) return galatJson(404, "Kontrak tidak ditemukan");
+
+    // Cek apakah sudah ada pembayaran
+    const jumlahBayar = (await env.DB.prepare(
+      "SELECT COUNT(*) as c FROM penerimaan_angsuran WHERE kontrak_id = ?"
+    )
+      .bind(id)
+      .first()) as any;
+    if (jumlahBayar && jumlahBayar.c > 0) {
+      return galatJson(400, "Kontrak sudah memiliki pembayaran, tidak bisa dihapus. Hapus angsuran terlebih dahulu.");
+    }
+
+    // Hapus semua data terkait dalam urutan yang benar
+    await env.DB.prepare("DELETE FROM jadwal_angsuran WHERE kontrak_id = ?").bind(id).run();
+    await env.DB.prepare("DELETE FROM penerimaan_angsuran WHERE kontrak_id = ?").bind(id).run();
+    await env.DB.prepare("DELETE FROM kas_bank WHERE referensi_id IN (SELECT id FROM penerimaan_angsuran WHERE kontrak_id = ?) AND referensi_tipe = 'angsuran'").bind(id).run();
+    await env.DB.prepare("DELETE FROM pelunasan WHERE kontrak_id = ?").bind(id).run();
+    await env.DB.prepare("DELETE FROM kolektibilitas WHERE kontrak_id = ?").bind(id).run();
+    await env.DB.prepare("DELETE FROM kontrak WHERE id = ?").bind(id).run();
+
+    // Kembalikan stok produk jika ada
+    if (kontrak.produk_id) {
+      await env.DB.prepare("UPDATE produk SET stok = stok + 1 WHERE id = ?").bind(kontrak.produk_id).run();
+    }
+
+    return Response.json({
+      ok: true,
+      message: "Kontrak berhasil dihapus",
+      deleted: {
+        id: kontrak.id,
+        no_kontrak: kontrak.no_kontrak,
+      },
+    });
+  }
+
   // Hapus angsuran
   if (path.startsWith("angsuran/")) {
     const id = path.split("/")[1];
@@ -714,6 +759,118 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
         jasa_bayar: angsuran.jasa_bayar,
         total: angsuran.pokok_bayar + angsuran.jasa_bayar,
       },
+    });
+  }
+
+  return new Response("Not found", { status: 404 });
+};
+
+export const onRequestPut: PagesFunction<Env> = async (context) => {
+  const { env, params } = context;
+  const path = (params.route as string[]).join("/");
+
+  const sesi = await bacaSesi(context.request, env);
+  if (!sesi) return galatJson(401, "Belum masuk");
+
+  const body = (await context.request.json()) as any;
+
+  // Update kontrak
+  if (path.startsWith("kontrak/")) {
+    const id = path.split("/")[1];
+    if (!id) return galatJson(400, "ID kontrak wajib diisi");
+
+    const existing = (await env.DB.prepare(
+      "SELECT * FROM kontrak WHERE id = ?"
+    )
+      .bind(id)
+      .first()) as any;
+    if (!existing) return galatJson(404, "Kontrak tidak ditemukan");
+
+    // Hanya bisa edit kontrak yang belum ada pembayaran
+    if (existing.angsuran_terbayar > 0) {
+      return galatJson(400, "Kontrak sudah memiliki pembayaran, tidak bisa diedit");
+    }
+
+    const nasabahId = String(body?.nasabahId || existing.nasabah_id).trim();
+    const hargaJual = Math.round(Number(body?.hargaJual ?? existing.harga_jual));
+    const dp = Math.round(Number(body?.dp ?? existing.dp));
+    const tenor = Math.round(Number(body?.tenor ?? existing.tenor));
+    const produkId = body?.produkId !== undefined ? (body.produkId || null) : existing.produk_id;
+
+    if (!nasabahId) return galatJson(400, "Nasabah wajib diisi");
+    if (!Number.isFinite(hargaJual) || hargaJual < 0)
+      return galatJson(400, "Harga jual tidak valid");
+    if (!Number.isFinite(tenor) || tenor < 1)
+      return galatJson(400, "Tenor tidak valid");
+
+    // Hitung ulang
+    const pokok = hargaJual - dp;
+    const jasaTotal = Math.round(pokok * 0.015 * tenor);
+    const total = pokok + jasaTotal;
+    const angsuranBulanan = Math.round(total / tenor);
+    const jasaBulanan = Math.round(jasaTotal / tenor);
+    const pokokBulanan = Math.round(pokok / tenor);
+
+    await env.DB.prepare(
+      `UPDATE kontrak SET nasabah_id = ?, produk_id = ?, harga_jual = ?, dp = ?,
+      pokok_pinjaman = ?, tenor = ?, jasa_total = ?, angsuran_pokok_bulanan = ?,
+      jasa_bulanan = ?, total_angsuran_bulanan = ?, saldo_pinjaman = ?,
+      updated_at = datetime('now') WHERE id = ?`,
+    )
+      .bind(
+        nasabahId,
+        produkId,
+        hargaJual,
+        dp,
+        pokok,
+        tenor,
+        jasaTotal,
+        pokokBulanan,
+        jasaBulanan,
+        angsuranBulanan,
+        total,
+        id,
+      )
+      .run();
+
+    // Regenerate jadwal angsuran
+    await env.DB.prepare("DELETE FROM jadwal_angsuran WHERE kontrak_id = ?").bind(id).run();
+    const baseDate = new Date();
+    let sisa = total;
+    for (let i = 1; i <= tenor; i++) {
+      const dueDate = new Date(baseDate);
+      dueDate.setMonth(dueDate.getMonth() + i);
+      sisa -= pokokBulanan + jasaBulanan;
+      await env.DB.prepare(
+        "INSERT INTO jadwal_angsuran (id, kontrak_id, bulan_ke, tanggal_jatuh_tempo, angsuran_pokok, jasa, total_angsuran, sisa_saldo) VALUES (?,?,?,?,?,?,?,?)",
+      )
+        .bind(
+          crypto.randomUUID(),
+          id,
+          i,
+          dueDate.toISOString().split("T")[0],
+          pokokBulanan,
+          jasaBulanan,
+          pokokBulanan + jasaBulanan,
+          Math.max(0, sisa),
+        )
+        .run();
+    }
+
+    return Response.json({
+      id,
+      no_kontrak: existing.no_kontrak,
+      nasabah_id: nasabahId,
+      produk_id: produkId,
+      harga_jual: hargaJual,
+      dp,
+      pokok_pinjaman: pokok,
+      tenor,
+      jasa_total: jasaTotal,
+      angsuran_pokok_bulanan: pokokBulanan,
+      jasa_bulanan: jasaBulanan,
+      total_angsuran_bulanan: angsuranBulanan,
+      saldo_pinjaman: total,
     });
   }
 

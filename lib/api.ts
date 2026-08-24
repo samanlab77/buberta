@@ -66,6 +66,22 @@ export const apiClient = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  updateKontrak: (id: string, data: {
+    nasabahId?: string;
+    produkId?: string;
+    hargaJual?: number;
+    dp?: number;
+    tenor?: number;
+  }) =>
+    api<Kontrak>(`/kontrak/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deleteKontrak: (id: string) =>
+    api<{ ok: boolean; message: string; deleted: { id: string; no_kontrak: string } }>(
+      `/kontrak/${id}`,
+      { method: "DELETE" },
+    ),
   createAngsuran: (data: {
     kontrakId: string;
     jumlahAngsuran: number;
