@@ -76,24 +76,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SesiProvider value={user}>
       <div className="flex min-h-screen bg-background">
         <NavigationDrawer user={user} onKeluar={keluar} />
-        <main className="flex-1 lg:ml-[280px] flex flex-col min-h-screen">
-          {/* Header */}
+
+        {/* Main content area */}
+        <main className="flex-1 lg:ml-[280px] flex flex-col min-h-screen min-w-0">
+          {/* Header - sticky at top */}
           <header className="sticky top-0 z-30 bg-surface-container-lowest/80 backdrop-blur-lg border-b border-outline-variant">
-            <div className="px-6 h-16 flex items-center gap-4">
-              <div className="lg:hidden w-10" />
-              <div className="flex-1">
-                <h1 className="text-lg font-bold text-surface-on tracking-tight">
+            <div className="px-4 sm:px-6 h-14 sm:h-16 flex items-center gap-3 sm:gap-4">
+              {/* Spacer for hamburger button on mobile */}
+              <div className="w-11 lg:hidden shrink-0" />
+
+              {/* Page title */}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-base sm:text-lg font-bold text-surface-on tracking-tight truncate">
                   {judul?.judul ?? "Buberta Finance"}
                 </h1>
                 {judul?.deskripsi && (
-                  <p className="text-xs text-surface-on-variant hidden sm:block">
+                  <p className="text-[11px] sm:text-xs text-surface-on-variant hidden sm:block truncate">
                     {judul.deskripsi}
                   </p>
                 )}
               </div>
-              <StatusKoneksi />
-              <div className="w-px h-8 bg-outline-variant hidden sm:block" />
-              <div className="hidden sm:flex items-center gap-2.5">
+
+              {/* Status koneksi */}
+              <div className="shrink-0">
+                <StatusKoneksi />
+              </div>
+
+              {/* User info - hidden on mobile */}
+              <div className="hidden sm:flex items-center gap-2.5 shrink-0">
                 <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shadow-sm">
                   {(user.nama || "?").charAt(0).toUpperCase()}
                 </div>
@@ -109,8 +119,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          {/* Content */}
-          <div className="flex-1 p-6 max-w-[1400px] w-full mx-auto">
+          {/* Page content */}
+          <div className="flex-1 p-4 sm:p-6 max-w-[1400px] w-full mx-auto">
             {children}
           </div>
         </main>
