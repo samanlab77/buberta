@@ -14,24 +14,26 @@ export default function TransaksiLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-wrap gap-1 p-1 rounded-xl bg-surface-container w-fit">
-        {tabs.map((t) => {
-          const aktif =
-            pathname === t.href || pathname.startsWith(t.href + "/");
-          return (
-            <Link
-              key={t.href}
-              href={t.href}
-              className={
-                aktif
-                  ? "px-5 py-2.5 rounded-lg text-sm font-semibold bg-primary text-on-primary shadow-md1 transition-all"
-                  : "px-5 py-2.5 rounded-lg text-sm font-medium text-surface-on-variant hover:bg-surface-container-high hover:text-surface-on transition-all"
-              }
-            >
-              {t.label}
-            </Link>
-          );
-        })}
+      <div className="overflow-x-auto -mx-6 px-6">
+        <div className="flex gap-1 p-1 rounded-xl bg-surface-container w-fit min-w-0">
+          {tabs.map((t) => {
+            const aktif =
+              pathname === t.href || pathname.startsWith(t.href + "/");
+            return (
+              <Link
+                key={t.href}
+                href={t.href}
+                className={
+                  aktif
+                    ? "px-5 py-2.5 rounded-lg text-sm font-semibold bg-primary text-on-primary shadow-md1 transition-all whitespace-nowrap"
+                    : "px-5 py-2.5 rounded-lg text-sm font-medium text-surface-on-variant hover:bg-surface-container-high hover:text-surface-on transition-all whitespace-nowrap"
+                }
+              >
+                {t.label}
+              </Link>
+            );
+          })}
+        </div>
       </div>
       {children}
     </div>
