@@ -568,9 +568,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .run();
 
     await env.DB.prepare(
-      'INSERT INTO kas_bank (id, tanggal, jenis, masuk, keterangan, referensi_id, referensi_tipe) VALUES (?,?,"kas",?,?,"angsuran")',
+      'INSERT INTO kas_bank (id, tanggal, jenis, masuk, keterangan, referensi_id, referensi_tipe) VALUES (?,?,"kas",?,?,?,"angsuran")',
     )
-      .bind(crypto.randomUUID(), new Date().toISOString(), totalBayar, id)
+      .bind(crypto.randomUUID(), new Date().toISOString(), totalBayar, "", id)
       .run();
 
     return Response.json({
