@@ -510,7 +510,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     await env.DB.prepare(
       `INSERT INTO kontrak (id, no_kontrak, nasabah_id, produk_id, harga_jual, dp,
       pokok_pinjaman, tenor, persentase_jasa, jasa_total, angsuran_pokok_bulanan, jasa_bulanan,
-      total_angsuran_bulanan, tanggal_akad, saldo_pinjaman) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      total_angsuran_bulanan, tanggal_akad, saldo_pinjaman) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     )
       .bind(
         id,
@@ -569,6 +569,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .bind(body.kontrakId)
       .first()) as any;
     if (!kontrak) return new Response("Kontrak not found", { status: 404 });
+    // Validasi: cegah pembayaran melebihi tenor
+    if (kontrak.angsuran_terbayar >= kontrak.tenor) {
+      return galatJson(400, "Tenor sudah lunas, tidak bisa menerima angsuran lagi");
+    }
     // Server menghitung split pokok vs jasa
     const pokokBayar = kontrak.angsuran_pokok_bulanan;
     const jasaBayar = kontrak.jasa_bulanan;
