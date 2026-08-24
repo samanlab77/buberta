@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowDownLeft, ArrowUpRight, Landmark } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Landmark, Download } from "lucide-react";
 import { rupiah, rupiahRingkas, tanggal } from "@/lib/utils";
 import { apiClient, type KasRow } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import { Memuat, Galat, Kosong } from "@/components/DataState";
+import { exportKasToExcel } from "@/lib/export-excel";
 
 export default function KasPage() {
   const { data, loading, error, muatUlang } = useApi<KasRow[]>(() =>
@@ -21,6 +22,17 @@ export default function KasPage() {
   const totalMasuk = baris.reduce((s, r) => s + (r.masuk || 0), 0);
   const totalKeluar = baris.reduce((s, r) => s + (r.keluar || 0), 0);
   const saldoAkhir = baris.length ? baris[baris.length - 1].saldo : 0;
+
+  const handleExport = async () => {
+    const exportData = baris.map((r) => ({
+      tanggal: r.tanggal,
+      keterangan: r.keterangan ?? "Transaksi",
+      masuk: r.masuk || 0,
+      keluar: r.keluar || 0,
+      saldo: r.saldo,
+    }));
+    await exportKasToExcel(exportData, totalMasuk, totalKeluar, saldoAkhir);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -68,14 +80,22 @@ export default function KasPage() {
       </div>
 
       <div className="summary-card overflow-hidden !p-0">
-        <div className="p-6 border-b border-outline-variant">
-          <h2 className="text-lg font-bold text-surface-on flex items-center gap-2">
+        <div className="p-6 border-b border-outline-variant flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <Landmark size={18} className="text-primary" />
-            Buku Kas/Bank
-          </h2>
-          <p className="text-sm text-surface-on-variant mt-1">
-            Mutasi kas otomatis dari transaksi
-          </p>
+            <h2 className="text-lg font-bold text-surface-on">
+              Buku Kas/Bank
+            </h2>
+          </div>
+          {baris.length > 0 && (
+            <button
+              onClick={() => void handleExport()}
+              className="btn-primary px-4 py-2 text-sm flex items-center gap-2"
+            >
+              <Download size={16} />
+              Export Excel
+            </button>
+          )}
         </div>
         {loading ? (
           <Memuat />

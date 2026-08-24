@@ -1,10 +1,11 @@
 "use client";
 
-import { CheckCircle2, FileCheck, Zap } from "lucide-react";
+import { CheckCircle2, FileCheck, Zap, Download } from "lucide-react";
 import { rupiah, rupiahRingkas, tanggal } from "@/lib/utils";
 import { apiClient, type LunasRow } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import { Memuat, Galat, Kosong } from "@/components/DataState";
+import { exportLunasToExcel } from "@/lib/export-excel";
 
 export default function LunasPage() {
   const { data, loading, error, muatUlang } = useApi<LunasRow[]>(() =>
@@ -13,6 +14,10 @@ export default function LunasPage() {
   const rows = data ?? [];
   const totalPokok = rows.reduce((s, l) => s + l.pokok_pinjaman, 0);
   const dipercepat = rows.filter((l) => l.status === "dipercepat").length;
+
+  const handleExport = async () => {
+    await exportLunasToExcel(rows);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -60,11 +65,22 @@ export default function LunasPage() {
       </div>
 
       <div className="summary-card overflow-hidden !p-0">
-        <div className="p-6 border-b border-outline-variant">
-          <h2 className="text-lg font-bold text-surface-on flex items-center gap-2">
+        <div className="p-6 border-b border-outline-variant flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <FileCheck size={18} className="text-primary" />
-            Laporan Kredit Lunas
-          </h2>
+            <h2 className="text-lg font-bold text-surface-on">
+              Laporan Kredit Lunas
+            </h2>
+          </div>
+          {rows.length > 0 && (
+            <button
+              onClick={() => void handleExport()}
+              className="btn-primary px-4 py-2 text-sm flex items-center gap-2"
+            >
+              <Download size={16} />
+              Export Excel
+            </button>
+          )}
         </div>
         {loading ? (
           <Memuat />

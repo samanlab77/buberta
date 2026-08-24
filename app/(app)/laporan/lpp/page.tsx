@@ -1,10 +1,11 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { FileText, Download } from "lucide-react";
 import { rupiah, rupiahRingkas } from "@/lib/utils";
 import { apiClient, type LppRow } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import { Memuat, Galat, Kosong } from "@/components/DataState";
+import { exportLppToExcel } from "@/lib/export-excel";
 
 export default function LppPage() {
   const { data, loading, error, muatUlang } = useApi<LppRow[]>(() =>
@@ -23,16 +24,28 @@ export default function LppPage() {
     { alokasi: 0, targetP: 0, targetB: 0, realisasiP: 0, realisasiB: 0, saldo: 0 },
   );
 
+  const handleExport = async () => {
+    await exportLppToExcel(rows);
+  };
+
   return (
     <div className="summary-card animate-fade-in overflow-hidden !p-0">
-      <div className="p-6 border-b border-outline-variant">
+      <div className="p-6 border-b border-outline-variant flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText size={18} className="text-primary" />
           <h2 className="text-lg font-bold text-surface-on">
             LPP — Laporan Pinjaman & Penerimaan
           </h2>
         </div>
-        <p className="text-sm text-surface-on-variant mt-1">Rekap seluruh kontrak</p>
+        {rows.length > 0 && (
+          <button
+            onClick={() => void handleExport()}
+            className="btn-primary px-4 py-2 text-sm flex items-center gap-2"
+          >
+            <Download size={16} />
+            Export Excel
+          </button>
+        )}
       </div>
       {loading ? (
         <Memuat />
