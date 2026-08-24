@@ -677,20 +677,30 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
       .first()) as any;
     if (!kontrak) return galatJson(404, "Kontrak tidak ditemukan");
 
-    // Cek apakah sudah ada pembayaran
+    // Hitung jumlah pembayaran untuk info
     const jumlahBayar = (await env.DB.prepare(
       "SELECT COUNT(*) as c FROM penerimaan_angsuran WHERE kontrak_id = ?"
     )
       .bind(id)
       .first()) as any;
-    if (jumlahBayar && jumlahBayar.c > 0) {
-      return galatJson(400, "Kontrak sudah memiliki pembayaran, tidak bisa dihapus. Hapus angsuran terlebih dahulu.");
+    const totalDihapus = jumlahBayar?.c || 0;
+
+    // Hapus kas_bank terkait penerimaan_angsuran terlebih dahulu
+    const semuaAngsuran = (await env.DB.prepare(
+      "SELECT id FROM penerimaan_angsuran WHERE kontrak_id = ?"
+    )
+      .bind(id)
+      .all()) as any;
+    if (semuaAngsuran.results && semuaAngsuran.results.length > 0) {
+      const ids = semuaAngsuran.results.map((a: any) => a.id);
+      for (const aid of ids) {
+        await env.DB.prepare("DELETE FROM kas_bank WHERE referensi_id = ? AND referensi_tipe = 'angsuran'").bind(aid).run();
+      }
     }
 
     // Hapus semua data terkait dalam urutan yang benar
     await env.DB.prepare("DELETE FROM jadwal_angsuran WHERE kontrak_id = ?").bind(id).run();
     await env.DB.prepare("DELETE FROM penerimaan_angsuran WHERE kontrak_id = ?").bind(id).run();
-    await env.DB.prepare("DELETE FROM kas_bank WHERE referensi_id IN (SELECT id FROM penerimaan_angsuran WHERE kontrak_id = ?) AND referensi_tipe = 'angsuran'").bind(id).run();
     await env.DB.prepare("DELETE FROM pelunasan WHERE kontrak_id = ?").bind(id).run();
     await env.DB.prepare("DELETE FROM kolektibilitas WHERE kontrak_id = ?").bind(id).run();
     await env.DB.prepare("DELETE FROM kontrak WHERE id = ?").bind(id).run();
@@ -702,10 +712,13 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
 
     return Response.json({
       ok: true,
-      message: "Kontrak berhasil dihapus",
+      message: totalDihapus > 0
+        ? `Kontrak berhasil dihapus bersama ${totalDihapus} data pembayaran`
+        : "Kontrak berhasil dihapus",
       deleted: {
         id: kontrak.id,
         no_kontrak: kontrak.no_kontrak,
+        pembayaran_dihapus: totalDihapus,
       },
     });
   }

@@ -429,24 +429,27 @@ export default function AkadPage() {
                       </span>
                     </td>
                     <td className="text-center">
-                      {k.angsuran_terbayar === 0 && (
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => bukaEdit(k)}
-                            className="p-2 rounded-lg hover:bg-primary-container text-surface-on-variant hover:text-primary transition-colors"
-                            title="Edit kontrak"
-                          >
-                            <Pencil size={16} />
-                          </button>
-                          <button
-                            onClick={() => setHapusItem(k)}
-                            className="p-2 rounded-lg hover:bg-error-container text-surface-on-variant hover:text-error transition-colors"
-                            title="Hapus kontrak"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => bukaEdit(k)}
+                          disabled={k.angsuran_terbayar > 0}
+                          className={`p-2 rounded-lg transition-colors ${
+                            k.angsuran_terbayar > 0
+                              ? "text-outline-variant cursor-not-allowed"
+                              : "text-surface-on-variant hover:text-primary hover:bg-primary-container"
+                          }`}
+                          title={k.angsuran_terbayar > 0 ? "Edit hanya untuk kontrak tanpa pembayaran" : "Edit kontrak"}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => setHapusItem(k)}
+                          className="p-2 rounded-lg hover:bg-error-container text-surface-on-variant hover:text-error transition-colors"
+                          title="Hapus kontrak"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -644,7 +647,13 @@ export default function AkadPage() {
             </div>
 
             <div className="bg-error-container/50 rounded-xl p-3 mb-5 text-sm text-on-error-container">
-              Semua data terkait (jadwal, kas bank) akan ikut terhapus. Stok produk akan dikembalikan.
+              {hapusItem.angsuran_terbayar > 0 ? (
+                <>
+                  <strong>Peringatan:</strong> Kontrak ini sudah memiliki {hapusItem.angsuran_terbayar} pembayaran angsuran. Semua data pembayaran, jadwal, dan kas bank akan ikut terhapus. Stok produk akan dikembalikan.
+                </>
+              ) : (
+                "Semua data terkait (jadwal, kas bank) akan ikut terhapus. Stok produk akan dikembalikan."
+              )}
             </div>
 
             <div className="flex justify-end gap-2">
