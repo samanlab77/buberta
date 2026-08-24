@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus, X, Pencil } from "lucide-react";
 import { apiClient, type Nasabah } from "@/lib/api";
 import { useApi } from "@/hooks/useApi";
 import { Memuat, Galat, Kosong } from "@/components/DataState";
@@ -12,6 +12,17 @@ export default function NasabahPage() {
   );
   const nasabah = data ?? [];
   const [formTampil, setFormTampil] = useState(false);
+  const [editItem, setEditItem] = useState<Nasabah | null>(null);
+
+  const handleEdit = (item: Nasabah) => {
+    setEditItem(item);
+    setFormTampil(true);
+  };
+
+  const handleTambah = () => {
+    setEditItem(null);
+    setFormTampil(true);
+  };
 
   return (
     <div className="summary-card animate-fade-in overflow-hidden !p-0">
@@ -25,7 +36,7 @@ export default function NasabahPage() {
           </p>
         </div>
         <button
-          onClick={() => setFormTampil(true)}
+          onClick={handleTambah}
           className="btn-primary px-5 py-2.5 text-sm flex items-center gap-2"
         >
           <UserPlus size={16} />
@@ -50,6 +61,7 @@ export default function NasabahPage() {
                 <th className="text-left hidden md:table-cell">Pekerjaan</th>
                 <th className="text-left hidden sm:table-cell">Kontak</th>
                 <th className="text-left">Status</th>
+                <th className="text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -82,6 +94,16 @@ export default function NasabahPage() {
                       {n.status === "aktif" ? "Aktif" : "Nonaktif"}
                     </span>
                   </td>
+                  <td className="text-center">
+                    <button
+                      onClick={() => handleEdit(n)}
+                      className="p-2 rounded-lg hover:bg-primary-container text-surface-on-variant hover:text-primary transition-colors"
+                      title="Edit nasabah"
+                      aria-label="Edit nasabah"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -90,10 +112,15 @@ export default function NasabahPage() {
       )}
 
       {formTampil && (
-        <FormTambahNasabah
-          onBatal={() => setFormTampil(false)}
+        <FormNasabah
+          editData={editItem}
+          onBatal={() => {
+            setFormTampil(false);
+            setEditItem(null);
+          }}
           onSelesai={async () => {
             setFormTampil(false);
+            setEditItem(null);
             await muatUlang();
           }}
         />
@@ -102,20 +129,24 @@ export default function NasabahPage() {
   );
 }
 
-function FormTambahNasabah({
+function FormNasabah({
+  editData,
   onBatal,
   onSelesai,
 }: {
+  editData: Nasabah | null;
   onBatal: () => void;
   onSelesai: () => void | Promise<void>;
 }) {
-  const [nama, setNama] = useState("");
-  const [nik, setNik] = useState("");
-  const [alamat, setAlamat] = useState("");
-  const [telepon, setTelepon] = useState("");
-  const [pekerjaan, setPekerjaan] = useState("");
+  const [nama, setNama] = useState(editData?.nama ?? "");
+  const [nik, setNik] = useState(editData?.nik ?? "");
+  const [alamat, setAlamat] = useState(editData?.alamat ?? "");
+  const [telepon, setTelepon] = useState(editData?.telepon ?? "");
+  const [pekerjaan, setPekerjaan] = useState(editData?.pekerjaan ?? "");
   const [menyimpan, setMenyimpan] = useState(false);
   const [galat, setGalat] = useState<string | null>(null);
+
+  const isEdit = !!editData;
 
   async function simpan(e: FormEvent) {
     e.preventDefault();
@@ -130,13 +161,18 @@ function FormTambahNasabah({
     }
     setMenyimpan(true);
     try {
-      await apiClient.createNasabah({
+      const data = {
         nama: nama.trim(),
         nik: nik.trim(),
         alamat: alamat.trim(),
         telepon: telepon.trim(),
         pekerjaan: pekerjaan.trim(),
-      });
+      };
+      if (isEdit && editData) {
+        await apiClient.updateNasabah(editData.id, data);
+      } else {
+        await apiClient.createNasabah(data);
+      }
       await onSelesai();
     } catch (err) {
       setGalat(err instanceof Error ? err.message : "Gagal menyimpan nasabah.");
@@ -156,8 +192,17 @@ function FormTambahNasabah({
       >
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-surface-on flex items-center gap-2">
-            <UserPlus size={18} className="text-primary" />
-            Tambah Nasabah
+            {isEdit ? (
+              <>
+                <Pencil size={18} className="text-primary" />
+                Edit Nasabah
+              </>
+            ) : (
+              <>
+                <UserPlus size={18} className="text-primary" />
+                Tambah Nasabah
+              </>
+            )}
           </h3>
           <button
             type="button"
@@ -251,7 +296,7 @@ function FormTambahNasabah({
             disabled={menyimpan}
             className="btn-primary px-5 py-2.5 text-sm disabled:opacity-50"
           >
-            {menyimpan ? "Menyimpan…" : "Simpan Nasabah"}
+            {menyimpan ? "Menyimpan…" : isEdit ? "Simpan Perubahan" : "Simpan Nasabah"}
           </button>
         </div>
       </form>

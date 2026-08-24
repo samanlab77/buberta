@@ -35,6 +35,14 @@ export const apiClient = {
     pekerjaan: string;
   }) =>
     api<Nasabah>("/nasabah", { method: "POST", body: JSON.stringify(data) }),
+  updateNasabah: (id: string, data: {
+    nama: string;
+    nik: string;
+    alamat: string;
+    telepon: string;
+    pekerjaan: string;
+  }) =>
+    api<Nasabah>(`/nasabah/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   getProduk: () => api<Produk[]>("/produk"),
   createProduk: (data: {
     nama: string;

@@ -468,6 +468,34 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return Response.json({ id, no_nasabah: no, ...body });
   }
 
+  // Update nasabah
+  if (path.startsWith("nasabah/")) {
+    const id = path.split("/")[1];
+    if (!id) return galatJson(400, "ID nasabah wajib diisi");
+
+    const existing = await env.DB.prepare("SELECT id FROM nasabah WHERE id = ?")
+      .bind(id)
+      .first();
+    if (!existing) return galatJson(404, "Nasabah tidak ditemukan");
+
+    const nama = String(body?.nama || "").trim();
+    const nik = String(body?.nik || "").trim();
+    const alamat = String(body?.alamat || "").trim();
+    const telepon = String(body?.telepon || "").trim();
+    const pekerjaan = String(body?.pekerjaan || "").trim();
+
+    if (!nama) return galatJson(400, "Nama nasabah wajib diisi");
+    if (!nik) return galatJson(400, "NIK wajib diisi");
+
+    await env.DB.prepare(
+      "UPDATE nasabah SET nama = ?, nik = ?, alamat = ?, telepon = ?, pekerjaan = ? WHERE id = ?",
+    )
+      .bind(nama, nik, alamat, telepon, pekerjaan, id)
+      .run();
+
+    return Response.json({ id, nama, nik, alamat, telepon, pekerjaan });
+  }
+
   if (path === "kontrak") {
     const id = crypto.randomUUID();
     const noKontrak = `BF-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
