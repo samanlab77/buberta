@@ -69,10 +69,12 @@ export default function AngsuranPage() {
         bulanBerjalan: Number(bulan) || detail.angsuran_terbayar + 1,
         jumlahAngsuran: detail.total_angsuran_bulanan,
       });
-      setHasil(result);
       setPesan("✅ Angsuran berhasil diterima dan tersimpan ke database.");
       void terbaruQ.muatUlang();
-      apiClient.getKontrak(noKontrak).then(setDetail).catch(() => {});
+      // Refresh detail kontrak SETELAH pembayaran agar data terbaru
+      const updatedDetail = await apiClient.getKontrak(noKontrak).catch(() => null);
+      if (updatedDetail) setDetail(updatedDetail);
+      setHasil(result);
     } catch (err) {
       setPesan(err instanceof Error ? `❌ ${err.message}` : "❌ Gagal menyimpan angsuran.");
     } finally {
@@ -82,10 +84,11 @@ export default function AngsuranPage() {
 
   const cetakInvoice = () => {
     if (!detail || !hasil) return;
-    const bulanKe = Number(bulan) || detail.angsuran_terbayar;
+    // Gunakan angsuran_terbayar dari detail yang sudah di-refresh
+    // (sudah termasuk pembayaran ini)
     generateInvoiceFromKontrak(
       detail,
-      bulanKe,
+      detail.angsuran_terbayar,
       hasil.pokok_bayar,
       hasil.jasa_bayar,
       hasil.total,

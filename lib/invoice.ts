@@ -253,8 +253,8 @@ export function generateInvoiceFromKontrak(
     pokokBayar,
     jasaBayar,
     totalBayar,
-    sisaSaldo: kontrak.saldo_pinjaman - pokokBayar,
-    angsuranTerbayar: kontrak.angsuran_terbayar + 1,
+    sisaSaldo: kontrak.saldo_pinjaman,
+    angsuranTerbayar: kontrak.angsuran_terbayar,
     tenor: kontrak.tenor,
   });
 }
